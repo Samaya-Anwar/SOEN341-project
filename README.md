@@ -25,6 +25,11 @@ beryl.liang01@gmail.com
 Abderrahmane Boulmalf
 40272217
 ab.boulmalf@gmail.com
+
+Emirhan Ceran
+40227343
+emirceran2003@hotmail.com
+
 _______________________________
 
 Description of the project:
