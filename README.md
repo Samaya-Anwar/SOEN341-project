@@ -47,7 +47,7 @@ Our objective is to develop a communication platform similar to Discord.
 1. Group communication in predefined channels.
 2. Direct messaging: private 1-on-1 conversations.
 3. User-based permissions. Admins manage channels/messages and members can send and view messages.
-4. Photo sharing. This platform will allow users to share images within chats.
+4. On-Demand Automated Summaries.
 
 ## Languages & Techniques
 - Backend:
