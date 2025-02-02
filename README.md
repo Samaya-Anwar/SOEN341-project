@@ -49,7 +49,7 @@ Our objective is to develop a communication platform similar to Discord.
 3. User-based permissions. Admins manage channels/messages and members can send and view messages.
 4. Photo sharing. This platform will allow users to share images within chats.
 
-## Languages & techniques
+## Languages & Techniques
 - Backend:
   - node.js
   - TBD
