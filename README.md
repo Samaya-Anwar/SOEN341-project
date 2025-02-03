@@ -49,7 +49,7 @@ Our objective is to create an intuitive and scalable messaging system that enabl
 
 ## Core features
 
-1. Group communication in predefined channels:
+1. Group communication in predefined channels.
 2. Direct messaging: private 1-on-1 conversations.
 3. User-based permissions. Admins manage channels/messages and members can send and view messages.
 4. On-Demand Automated Summaries.
