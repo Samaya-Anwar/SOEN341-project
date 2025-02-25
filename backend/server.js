@@ -5,17 +5,19 @@ const WebSocket = require("ws");
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ port: 8080 });
-
-ws.on("message", (message) => {
-  console.log("received: %s", message);
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
+wss.on("connection", (ws) => {
+  console.log("New client connected");
+  ws.on("message", (message) => {
+    console.log("received: %s", message);
+    ws.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
   });
-});
-ws.on("close", () => {
-  console.log("Client disconnected");
+  ws.on("close", () => {
+    console.log("Client disconnected");
+  });
 });
 const PORT = process.env.PORT || 5050;
 server.listen(PORT, () => {
