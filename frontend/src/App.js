@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import LoginSignup from "./components/LoginSignup";
-import Sidebar from "./components/Sidebar";
-import Chatbox from "./components/Chatbox";
+import Chatbox from "../components/Chatbox";
+import LoginSignup from "../components/LoginSignup";
+import Sidebar from "../components/Sidebar";
 
 function App() {
   const [selectedChat, setSelectedChat] = useState(null);
