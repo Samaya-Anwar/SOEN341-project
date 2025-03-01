@@ -1,7 +1,7 @@
 const http = require("http");
 const { Server } = require("socket.io");
 const app = require("./app");
-const { port } = require("./config/config");
+const { port } = require("./src/config/config");
 
 const server = http.createServer(app);
 
@@ -30,6 +30,4 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(port, () =>
-  console.log(`🚀 Server running on port ${port}`)
-);
+server.listen(port, () => console.log(`🚀 Server running on port ${port}`));

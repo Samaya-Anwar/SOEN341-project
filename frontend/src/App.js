@@ -1,25 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginSignup from "./components/LoginSignup";
+import Sidebar from "./components/Sidebar";
+import Chatbox from "./components/Chatbox";
 
 function App() {
+  const [selectedChat, setSelectedChat] = useState(null);
+  const username = localStorage.getItem("username");
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Routes>
+      <Route path="/" element={<LoginSignup />} />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <div style={{ display: "flex" }}>
+              <Sidebar onSelectChat={setSelectedChat} />
+              <Chatbox selectedChat={selectedChat} username={username} />
+            </div>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
+
+// **Protected Route**
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/" />;
+};
 
 export default App;
