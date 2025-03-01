@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const connectDB = require("./config/db");
+const connectDB = require("./src/config/db");
 
 const app = express();
 
@@ -12,9 +12,9 @@ app.use(cors());
 app.use(express.json());
 
 // Register routes
-const authRoutes = require("./routes/authRoutes");
-const messageRoutes = require("./routes/messageRoutes");
-const channelRoutes = require("./routes/channelRoutes");
+const authRoutes = require("./src/routes/authRoutes");
+const messageRoutes = require("./src/routes/messageRoutes");
+const channelRoutes = require("./src/routes/channelRoutes");
 
 app.use("/api", authRoutes);
 app.use("/api/messages", messageRoutes);
