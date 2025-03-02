@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Box, TextField, Button, Typography } from "@mui/material";
+import { getMessages } from "../api/get/getMessages";
 import axios from "axios";
 import { io } from "socket.io-client";
 
