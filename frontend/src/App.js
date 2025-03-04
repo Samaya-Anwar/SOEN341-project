@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginSignup from "./components/LoginSignup";
 import Sidebar from "./components/Sidebar";
 import Chatbox from "./components/Chatbox";
@@ -9,21 +9,23 @@ function App() {
   const username = localStorage.getItem("username");
 
   return (
-    <Routes>
-      <Route path="/" element={<LoginSignup />} />
-      <Route
-        path="/chat"
-        element={
-          <ProtectedRoute>
-            <div style={{ display: "flex" }}>
-              <Sidebar onSelectChat={setSelectedChat} />
-              <Chatbox selectedChat={selectedChat} username={username} />
-            </div>
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginSignup />} />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <div style={{ display: "flex" }}>
+                <Sidebar onSelectChat={setSelectedChat} />
+                <Chatbox selectedChat={selectedChat} username={username} />
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 
