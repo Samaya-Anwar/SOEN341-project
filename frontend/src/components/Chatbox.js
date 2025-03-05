@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Box, TextField, Button, Typography } from "@mui/material";
 import { getMessages } from "../api/get/getMessages";
-import axios from "axios";
+import { deleteMessage } from "../api/delete/deleteMessage";
 import { io } from "socket.io-client";
+import { sendMessage } from "../api/post/sendMessage";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
@@ -18,14 +19,15 @@ const Chatbox = ({ selectedChat }) => {
   // Load messages for the selected chat
   useEffect(() => {
     if (selectedChat) {
-      axios
-        .get(`${API_URL}/api/messages/${selectedChat}`)
-        .then((res) => setMessages(res.data))
-        .catch((err) => console.error("Error fetching messages:", err));
-
+      const response = getMessages(selectedChat);
+      if (!response) {
+        console.error("Selected chat not found:", selectedChat);
+      } else {
+        setMessages(response.data);
+      }
       socket.emit("joinChannel", selectedChat);
     }
-    console.log(API_URL);
+    console.log("Api url:", API_URL);
   }, [selectedChat]);
 
   // Listen for new messages & message deletions
@@ -52,7 +54,7 @@ const Chatbox = ({ selectedChat }) => {
   }, [selectedChat]);
 
   // Send a message
-  const sendMessage = async () => {
+  const onSendMessage = async () => {
     if (!input.trim()) return;
 
     const messageData = {
@@ -60,9 +62,13 @@ const Chatbox = ({ selectedChat }) => {
       content: input,
       channel: selectedChat,
     };
+    if (!username || !selectedChat) {
+      console.error("Missing required message data:", messageData);
+      return;
+    }
 
     try {
-      await axios.post(`${API_URL}/api/messages`, messageData);
+      await sendMessage(messageData);
       setInput("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -73,14 +79,14 @@ const Chatbox = ({ selectedChat }) => {
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      sendMessage();
+      onSendMessage();
     }
   };
 
   // Delete a message (Admins only)
-  const deleteMessage = async (messageId) => {
+  const onDeleteMessage = async (messageId) => {
     try {
-      await axios.delete(`${API_URL}/api/messages/${messageId}`);
+      deleteMessage(messageId);
       socket.emit("deleteMessage", messageId);
     } catch (error) {
       console.error("Error deleting message:", error);
@@ -124,7 +130,7 @@ const Chatbox = ({ selectedChat }) => {
             </Typography>
             {role === "admin" && (
               <Button
-                onClick={() => deleteMessage(msg._id)}
+                onClick={() => onDeleteMessage(msg._id)}
                 sx={{ marginLeft: 1, color: "red" }}
               >
                 Delete
@@ -146,7 +152,7 @@ const Chatbox = ({ selectedChat }) => {
         <Button
           variant="contained"
           color="primary"
-          onClick={sendMessage}
+          onClick={onSendMessage}
           sx={{ marginLeft: 1 }}
         >
           Send
