@@ -4,48 +4,48 @@ import {
   List,
   ListItem,
   ListItemText,
-  TextField,
   Typography,
   Button,
 } from "@mui/material";
-import axios from "axios";
 import { io } from "socket.io-client";
+import { createChannel } from "../api/post/createChannel";
+import { getChannels } from "../api/get/getChannels";
+import { deleteChannel } from "../api/delete/deleteChannel";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const socket = io(`${API_URL}`);
 
 const Sidebar = ({ onSelectChat }) => {
-  const [search, setSearch] = useState("");
   const [channels, setChannels] = useState([]);
   const role = localStorage.getItem("role");
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/channels`).then((res) => setChannels(res.data));
+    const response = getChannels();
+    setChannels(response.data);
 
     socket.on("channelUpdated", () => {
-      axios.get(`${API_URL}/api/channels`).then((res) => setChannels(res.data));
+      const response = getChannels();
+      setChannels(response.data);
     });
 
     return () => socket.off("channelUpdated");
   }, []);
 
-  const createChannel = async () => {
+  const onCreateChannel = async () => {
     const channelName = prompt("Enter new channel name:");
     if (!channelName) return;
 
     try {
-      await axios.post(`${API_URL}/api/channels`, {
-        channel: channelName,
-      });
+      await createChannel(channelName);
       socket.emit("channelUpdated"); // Notify users about new channel
     } catch (error) {
       console.error("Error creating channel:", error);
     }
   };
 
-  const deleteChannel = async (channel) => {
+  const onDeleteChannel = async (channel) => {
     try {
-      await axios.delete(`${API_URL}/api/channels/${channel}`);
+      await deleteChannel(channel);
       socket.emit("channelUpdated"); // Notify users about channel deletion
     } catch (error) {
       console.error("Error deleting channel:", error);
@@ -65,7 +65,7 @@ const Sidebar = ({ onSelectChat }) => {
       <Typography variant="h6">Channels</Typography>
       {role === "admin" && (
         <Button
-          onClick={createChannel}
+          onClick={onCreateChannel}
           sx={{ color: "lightblue", marginBottom: 1 }}
         >
           + Add Channel
@@ -80,7 +80,10 @@ const Sidebar = ({ onSelectChat }) => {
           >
             <ListItemText primary={channel.name} />
             {role === "admin" && (
-              <Button color="error" onClick={() => deleteChannel(channel.name)}>
+              <Button
+                color="error"
+                onClick={() => onDeleteChannel(channel.name)}
+              >
                 Delete
               </Button>
             )}
