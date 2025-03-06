@@ -40,8 +40,18 @@ const channelSchema = new mongoose.Schema({
 });
 const Channel = mongoose.model("Channel", channelSchema);
 
+// **Fetch All Users**
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find(); // Fetch all users from the database
+    res.json(users); // Send users as a JSON response
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch users" });
+  }
+});
+
 // **Signup Route**
-app.post("/api/signup", async (req, res) => {
+/*app.post("/api/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
@@ -57,7 +67,7 @@ app.post("/api/signup", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Signup failed" });
   }
-});
+});*/
 
 // **Login Route**
 app.post("/api/login", async (req, res) => {
@@ -77,6 +87,79 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ error: "Login failed" });
   }
 });
+
+// **Signup Route**
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Check if username already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return res.status(400).json({ error: "Username already exists" });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Set default role to 'member'
+    const role = 'member';  // Everyone starts as member
+
+    // Create and save new user
+    const newUser = new User({ username, password: hashedPassword, role });
+    await newUser.save();
+
+    // Respond back without revealing internal role logic
+    res.json({ message: "User registered successfully. You are assigned a member role." });
+  } catch (err) {
+    res.status(500).json({ error: "Signup failed" });
+  }
+});
+
+// **Admin Assign Role Route** (for admin to assign a role)
+app.post("/api/assign-role", async (req, res) => {
+  try {
+    const { username, newRole } = req.body;
+
+    // Ensure that only an admin can assign roles
+    const loggedInUser = await User.findById(req.userId); // Assume you are validating JWT token and extracting userId
+    if (loggedInUser.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized: Only admins can assign roles" });
+    }
+
+    // Find the user and update their role
+    const userToUpdate = await User.findOne({ username });
+    if (!userToUpdate) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Ensure only 'member' users can be promoted to 'admin'
+    if (newRole === 'admin' && userToUpdate.role === 'admin') {
+      return res.status(400).json({ error: "User is already an admin" });
+    }
+
+    userToUpdate.role = newRole; // newRole could be 'admin' or 'member'
+    await userToUpdate.save();
+
+    res.status(200).json({ message: `${username}'s role updated to ${newRole}` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update role" });
+  }
+});
+
+app.put("/api/users/assign-role", async (req, res) => {
+  const { username, role } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.role = role; // Update the role
+    await user.save();
+
+    res.json({ message: "User role updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating user role" });
+  }
+});
+
 
 // **Send Message**
 app.post("/api/messages", async (req, res) => {
