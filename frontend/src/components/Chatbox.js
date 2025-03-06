@@ -18,16 +18,19 @@ const Chatbox = ({ selectedChat }) => {
 
   // Load messages for the selected chat
   useEffect(() => {
-    if (selectedChat) {
-      const response = getMessages(selectedChat);
-      if (!response) {
-        console.error("Selected chat not found:", selectedChat);
-      } else {
-        setMessages(response.data);
+    const fetchMessages = async () => {
+      if (selectedChat) {
+        try {
+          const response = await getMessages(selectedChat);
+          setMessages(response);
+          socket.emit("joinChannel", selectedChat);
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
       }
-      socket.emit("joinChannel", selectedChat);
-    }
-    console.log("Api url:", API_URL);
+    };
+
+    fetchMessages();
   }, [selectedChat]);
 
   // Listen for new messages & message deletions
