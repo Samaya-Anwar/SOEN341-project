@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signUpUser } from "../api/post/signUpUser";
-import { loginUser } from "../api/post/loginUser";
+import axios from "axios";
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [loginData, setLoginData] = useState({
-    username: "",
-    password: "",
-  });
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -20,7 +18,10 @@ const LoginSignup = () => {
     try {
       if (isLogin) {
         // Handle login
-        const response = await loginUser(loginData);
+        const response = await axios.post(`${API_URL}/api/login`, {
+          username,
+          password,
+        });
 
         // Store token, username, and role in localStorage
         localStorage.setItem("token", response.data.token);
@@ -32,7 +33,10 @@ const LoginSignup = () => {
         navigate("/chat"); // Redirect to chat
       } else {
         // Handle signup
-        const signupResponse = await signUpUser(loginData);
+        const signupResponse = await axios.post(`${API_URL}/api/signup`, {
+          username,
+          password,
+        });
 
         alert(
           `Signup successful! You have been assigned the role: ${signupResponse.data.role}`
@@ -52,19 +56,15 @@ const LoginSignup = () => {
           <input
             type="text"
             placeholder="Username"
-            value={loginData.username}
-            onChange={(e) =>
-              setLoginData({ ...loginData, username: e.target.value })
-            }
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
           <input
             type="password"
             placeholder="Password"
-            value={loginData.password}
-            onChange={(e) =>
-              setLoginData({ loginData, password: e.target.value })
-            }
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
           <button type="submit">{isLogin ? "Log In" : "Sign Up"}</button>

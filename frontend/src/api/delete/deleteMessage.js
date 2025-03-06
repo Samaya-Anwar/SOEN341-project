@@ -10,7 +10,7 @@ const deleteMessage = async (messageId) => {
 
   try {
     const response = await axios.delete(`${apiUrl}/api/messages/${messageId}`);
-    return response.data;
+    return response;
   } catch (error) {
     console.error(`Error deleting message: ${messageId}:`, error);
   }

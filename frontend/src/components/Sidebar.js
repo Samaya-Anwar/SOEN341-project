@@ -20,13 +20,18 @@ const Sidebar = ({ onSelectChat }) => {
   const role = localStorage.getItem("role");
 
   useEffect(() => {
-    const response = getChannels();
-    setChannels(response.data);
+    const fetchChannels = async () => {
+      try {
+        const response = await getChannels();
+        setChannels(response);
+      } catch (error) {
+        console.error("Error fetching channels:", error);
+      }
+    };
 
-    socket.on("channelUpdated", () => {
-      const response = getChannels();
-      setChannels(response.data);
-    });
+    fetchChannels();
+
+    socket.on("channelUpdated", fetchChannels);
 
     return () => socket.off("channelUpdated");
   }, []);
