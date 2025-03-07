@@ -71,11 +71,17 @@ const Chatbox = ({ selectedChat }) => {
     }
   };
 
-  // Delete a message (Admins only)
-  const deleteMessage = async (messageId) => {
+  // Delete a message (Admins can delete any message, Members can only delete their own messages)
+  const deleteMessage = async (messageId, sender) => {
     try {
-      await axios.delete(`http://localhost:5001/api/messages/${messageId}`);
-      socket.emit("deleteMessage", messageId);
+      // Check if the current user is an admin or the sender of the message
+      if (role === "admin" || sender === username) {
+        await axios.delete(`http://localhost:5001/api/messages/${messageId}`);
+        socket.emit("messageDeleted", messageId);
+        setMessages((prevMessages) => prevMessages.filter((msg) => msg._id !== messageId));
+      } else {
+        console.error("You are not authorized to delete this message.");
+      }
     } catch (error) {
       console.error("Error deleting message:", error);
     }
@@ -87,13 +93,13 @@ const Chatbox = ({ selectedChat }) => {
         {selectedChat || "Select a chat"}
       </Typography>
       <Box sx={{ height: "80%", overflowY: "auto", backgroundColor: "#2f3136", padding: 2, borderRadius: 1 }}>
-        {messages.map((msg, index) => (
-          <Box key={index} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
+        {messages.map((msg) => (
+          <Box key={msg._id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
             <Typography>
               <strong>{msg.sender}:</strong> {msg.content}
             </Typography>
-            {role === "admin" && (
-              <Button onClick={() => deleteMessage(msg._id)} sx={{ marginLeft: 1, color: "red" }}>
+            {(role === "admin" || msg.sender === username) && (
+              <Button onClick={() => deleteMessage(msg._id, msg.sender)} sx={{ marginLeft: 1, color: "red" }}>
                 Delete
               </Button>
             )}
