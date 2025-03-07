@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { motion } from "framer-motion"; // Import Framer Motion
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,19 +17,15 @@ const LoginSignup = () => {
     e.preventDefault();
     try {
       if (isLogin) {
-        // Handle login
         const response = await axios.post("http://localhost:5001/api/login", { username, password });
 
-        // Store token, username, and role in localStorage
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("username", response.data.username);
         localStorage.setItem("role", response.data.role);
 
-        console.log("Stored role in localStorage:", response.data.role); // Debugging
         alert(`Login successful! Your role is ${response.data.role}`);
-        navigate("/chat"); // Redirect to chat
+        navigate("/chat");
       } else {
-        // Handle signup
         const signupResponse = await axios.post("http://localhost:5001/api/signup", { username, password });
 
         alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role}`);
@@ -40,8 +37,18 @@ const LoginSignup = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.leftPanel}>
+    <motion.div
+      initial={{ opacity: 0, y: -50 }} // Start animation (fade in from top)
+      animate={{ opacity: 1, y: 0 }}   // End animation
+      transition={{ duration: 0.8, ease: "easeOut" }} // Animation duration
+      style={styles.container}
+    >
+      <motion.div
+        initial={{ x: -100, opacity: 0 }} // Left panel slide-in
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.8 }}
+        style={styles.leftPanel}
+      >
         <h2>{isLogin ? "Log In" : "Sign Up"}</h2>
         <form onSubmit={handleSubmit}>
           <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
@@ -52,12 +59,18 @@ const LoginSignup = () => {
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <span style={styles.toggleText} onClick={toggleForm}>{isLogin ? "Sign Up" : "Log In"}</span>
         </p>
-      </div>
-      <div style={styles.rightPanel}>
+      </motion.div>
+
+      <motion.div
+        initial={{ x: 100, opacity: 0 }} // Right panel slide-in
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.8 }}
+        style={styles.rightPanel}
+      >
         <h1>Welcome to ChatApp</h1>
         <p>{isLogin ? "Log in to continue chatting." : "Create an account to start chatting."}</p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
