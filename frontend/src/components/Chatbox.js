@@ -4,6 +4,7 @@ import { getMessages } from "../api/get/getMessages";
 import { deleteMessage } from "../api/delete/deleteMessage";
 import { io } from "socket.io-client";
 import { sendMessage } from "../api/post/sendMessage";
+import { getChatSummary } from "../api/get/getChatSummary";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
@@ -15,6 +16,8 @@ const Chatbox = ({ selectedChat }) => {
 
   const username = localStorage.getItem("username") || "Anonymous";
   const role = localStorage.getItem("role");
+
+  const [summary, setSummary] = useState("");
 
   // Load messages for the selected chat
   useEffect(() => {
@@ -95,6 +98,17 @@ const Chatbox = ({ selectedChat }) => {
       console.error("Error deleting message:", error);
     }
   };
+  const onSummarize = async () => {
+    if (!selectedChat) return;
+
+    try {
+      const data = await getChatSummary(selectedChat);
+      setSummary(data.summary || "No summary available.");
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+      setSummary("Could not generate summary.");
+    }
+  };
 
   return (
     <Box
@@ -142,6 +156,38 @@ const Chatbox = ({ selectedChat }) => {
           </Box>
         ))}
       </Box>
+      
+      <Box sx={{ marginBottom: 2 }}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={onSummarize}
+          sx={{ marginRight: 2 }}
+        >
+          Summarize
+        </Button>
+        {summary && (
+          <Box
+            sx={{
+              marginTop: 2,
+              backgroundColor: "#2f3136",
+              padding: 2,
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body1">{summary}</Typography>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={() => setSummary("")}
+              sx={{ marginTop: 1 }}
+            >
+              Close
+            </Button>
+          </Box>
+        )}
+      </Box>
+      
       <Box sx={{ display: "flex", marginTop: 2 }}>
         <TextField
           variant="outlined"
