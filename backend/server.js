@@ -6,11 +6,14 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const http = require("http");
 const { Server } = require("socket.io");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client("198072547047-vtauj833icvolq5cs13i4ted4gs9a6d8.apps.googleusercontent.com");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-app.use(cors());
+app.use(cors({ origin: "http://localhost:3000" }));
+//app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
@@ -21,11 +24,18 @@ mongoose
 
 // **Schemas & Models**
 const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
   role: { type: String, enum: ["admin", "member"], default: "member" },
+
+  googleId: { type: String, unique: true, sparse: true }, // Google User ID
+  email: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  picture: { type: String },
+  password: { type: String, required: false, default: null }, // ✅ Make optional
+  
+  username: { type: String, unique: true, required: true }, // Ensure username field is here
 });
 const User = mongoose.model("User", userSchema);
+module.exports = User;
 
 const messageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
@@ -50,25 +60,6 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-// **Signup Route**
-/*app.post("/api/signup", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const existingUser = await User.findOne({ username });
-    if (existingUser) return res.status(400).json({ error: "Username already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const role = Math.random() < 0.1 ? "admin" : "member"; // 10% chance of admin
-
-    const newUser = new User({ username, password: hashedPassword, role });
-    await newUser.save();
-
-    res.json({ message: "User registered successfully", role });
-  } catch (err) {
-    res.status(500).json({ error: "Signup failed" });
-  }
-});*/
-
 // **Login Route**
 app.post("/api/login", async (req, res) => {
   try {
@@ -87,6 +78,61 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ error: "Login failed" });
   }
 });
+
+// **Google Login Route**
+app.post('/api/google-login', async (req, res) => {
+  try {
+      const { token } = req.body;
+
+      if (!token) {
+          return res.status(400).json({ error: "Missing token" });
+      }
+
+      // Verify Google token and get user info
+      const decodedToken = jwt.decode(token);
+      console.log("Decoded Token:", decodedToken);  // ✅ Log token
+
+      const { email, name } = decodedToken;
+      console.log('Email:', email);
+
+      // Set username to email or fallback to a safe value
+      let username = email;  // Ensure that username is set to email
+
+      if (!username) {
+        // Fallback if email is not available (but this shouldn't happen)
+        username = `user_${Date.now()}`;
+      }
+      console.log('Username:', username);
+
+    // Check if the user already exists in the database
+    let existingUser = await User.findOne({ username });
+
+    // If user doesn't exist, create a new user
+    if (!existingUser) {
+      const newUser = new User({
+        username,  // Use email as username
+        email,
+        name,
+        role: 'member',  // Set default role, can be changed as needed
+      });
+
+      await newUser.save();
+      console.log('New user created:', newUser);
+      existingUser = newUser;  // Set the existing user to the new one we just created
+    }
+
+    // Send the user info and token to the frontend
+    res.json({
+      token: jwt.sign({ id: existingUser._id }, 'your_jwt_secret', { expiresIn: '1h' }),
+      username: existingUser.username,
+      role: existingUser.role,
+    });
+  } catch (error) {
+    console.error('Error during Google login:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 // **Signup Route**
 app.post("/api/signup", async (req, res) => {
