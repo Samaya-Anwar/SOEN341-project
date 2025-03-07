@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { GoogleLogin } from "@react-oauth/google";
 import { motion } from "framer-motion"; // Import Framer Motion
 
 const LoginSignup = () => {
@@ -8,6 +9,10 @@ const LoginSignup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log("LoginSignup component mounted!");
+  }, []);
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -18,16 +23,18 @@ const LoginSignup = () => {
     try {
       if (isLogin) {
         const response = await axios.post("http://localhost:5001/api/login", { username, password });
-
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("username", response.data.username);
         localStorage.setItem("role", response.data.role);
-
         alert(`Login successful! Your role is ${response.data.role}`);
         navigate("/chat");
       } else {
-        const signupResponse = await axios.post("http://localhost:5001/api/signup", { username, password });
-
+        const signupResponse = await axios.post("http://localhost:5001/api/signup", {
+          username,
+          password,
+          email: username,
+          name: username,
+        });
         alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role}`);
         setIsLogin(true);
       }
@@ -36,49 +43,169 @@ const LoginSignup = () => {
     }
   };
 
+  const handleGoogleLoginFailure = (error) => {
+    console.error("Google Login Failed!", error);
+  };
+
+  const handleGoogleLoginSuccess = async (response) => {
+    const { credential } = response;
+    try {
+      console.log("Sending token to backend:", credential);
+      const googleResponse = await axios.post("http://localhost:5001/api/google-login", { token: credential });
+
+      if (googleResponse.data.token && googleResponse.data.username && googleResponse.data.role) {
+        localStorage.setItem("token", googleResponse.data.token);
+        localStorage.setItem("username", googleResponse.data.username);
+        localStorage.setItem("role", googleResponse.data.role);
+        alert(`Google Login successful! Your role is ${googleResponse.data.role}`);
+        navigate("/chat");
+      } else {
+        alert("Unexpected response from server. Please try again.");
+      }
+    } catch (error) {
+      console.error("Google Login Verification Failed:", error);
+      alert("Google login failed. Please try again.");
+    }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -50 }} // Start animation (fade in from top)
-      animate={{ opacity: 1, y: 0 }}   // End animation
-      transition={{ duration: 0.8, ease: "easeOut" }} // Animation duration
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1, ease: "easeOut" }}
       style={styles.container}
     >
       <motion.div
-        initial={{ x: -100, opacity: 0 }} // Left panel slide-in
+        initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.8 }}
         style={styles.leftPanel}
       >
-        <h2>{isLogin ? "Log In" : "Sign Up"}</h2>
-        <form onSubmit={handleSubmit}>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          {isLogin ? "Log In" : "Sign Up"}
+        </motion.h2>
+
+        <motion.form
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          onSubmit={handleSubmit}
+        >
           <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <button type="submit">{isLogin ? "Log In" : "Sign Up"}</button>
-        </form>
-        <p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+          >
+            {isLogin ? "Log In" : "Sign Up"}
+          </motion.button>
+        </motion.form>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <span style={styles.toggleText} onClick={toggleForm}>{isLogin ? "Sign Up" : "Log In"}</span>
-        </p>
+        </motion.p>
+
+        {isLogin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+            <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={handleGoogleLoginFailure} />
+          </motion.div>
+        )}
       </motion.div>
 
       <motion.div
-        initial={{ x: 100, opacity: 0 }} // Right panel slide-in
+        initial={{ x: 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.8 }}
+        transition={{ delay: 0.3, duration: 0.8 }}
         style={styles.rightPanel}
       >
-        <h1>Welcome to ChatApp</h1>
-        <p>{isLogin ? "Log in to continue chatting." : "Create an account to start chatting."}</p>
+        {/* Logo with fade-in effect */}
+        <motion.img 
+          src="/logo1.png" 
+          alt="ChatApp Logo" 
+          style={styles.logo}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        />
+
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          Welcome to ChatApp
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          style={{ fontSize: "18px", color: "#AAB7C4" }}
+        >
+          The best place to chat securely with your friends!
+        </motion.p>
       </motion.div>
+
+      <footer style={styles.footer}>
+        © 2025 ChatApp. All rights reserved.
+      </footer>
     </motion.div>
   );
 };
 
 const styles = {
-  container: { display: "flex", height: "100vh", backgroundColor: "#1e1e2f", color: "white" },
-  leftPanel: { width: "40%", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
-  rightPanel: { width: "60%", backgroundColor: "#252542", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
+  container: { 
+    display: "flex", 
+    height: "100vh", 
+    background: "linear-gradient(to right, #253545, #2C3E50)", // Dark gradient
+    color: "white" 
+  },
+  leftPanel: { 
+    width: "40%", 
+    padding: "40px", 
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center",
+  },
+  rightPanel: { 
+    width: "60%", 
+    background: "#2C3E50", 
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center",
+    textAlign: "center"
+  },
+  logo: {
+    width: "220px", // Bigger size
+    height: "auto",
+    marginBottom: "15px",
+    display: "block",
+    objectFit: "contain",
+  },
   toggleText: { color: "#4a90e2", cursor: "pointer" },
+  footer: {
+    position: "absolute",
+    bottom: "10px",
+    width: "100%",
+    textAlign: "center",
+    color: "#AAB7C4",
+    fontSize: "14px",
+  }
 };
 
 export default LoginSignup;
