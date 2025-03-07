@@ -26,17 +26,15 @@ const LoginSignup = () => {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("username", response.data.username);
         localStorage.setItem("role", response.data.role);
-
         alert(`Login successful! Your role is ${response.data.role}`);
         navigate("/chat");
       } else {
         const signupResponse = await axios.post("http://localhost:5001/api/signup", {
           username,
           password,
-          email: username, // Assuming username is email
+          email: username,
           name: username,
         });
-
         alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role}`);
         setIsLogin(true);
       }
@@ -59,7 +57,6 @@ const LoginSignup = () => {
         localStorage.setItem("token", googleResponse.data.token);
         localStorage.setItem("username", googleResponse.data.username);
         localStorage.setItem("role", googleResponse.data.role);
-
         alert(`Google Login successful! Your role is ${googleResponse.data.role}`);
         navigate("/chat");
       } else {
@@ -73,13 +70,13 @@ const LoginSignup = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -50 }} // Fade in from top
-      animate={{ opacity: 1, y: 0 }} // Appear smoothly
-      transition={{ duration: 1, ease: "easeOut" }} // Duration of animation
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1, ease: "easeOut" }}
       style={styles.container}
     >
       <motion.div
-        initial={{ x: -100, opacity: 0 }} // Slide-in from left for login form
+        initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.8 }}
         style={styles.leftPanel}
@@ -118,7 +115,6 @@ const LoginSignup = () => {
           <span style={styles.toggleText} onClick={toggleForm}>{isLogin ? "Sign Up" : "Log In"}</span>
         </motion.p>
 
-        {/* Animate Google login button */}
         {isLogin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -131,11 +127,14 @@ const LoginSignup = () => {
       </motion.div>
 
       <motion.div
-        initial={{ x: 100, opacity: 0 }} // Slide-in from right for welcome panel
+        initial={{ x: 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.8 }}
         style={styles.rightPanel}
       >
+        {/* Logo at the top */}
+        <img src="/logo1a.png" alt="ChatApp Logo" style={styles.logo} />
+
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -156,10 +155,39 @@ const LoginSignup = () => {
 };
 
 const styles = {
-  container: { display: "flex", height: "100vh", backgroundColor: "#1e1e2f", color: "white" },
-  leftPanel: { width: "40%", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
-  rightPanel: { width: "60%", backgroundColor: "#252542", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
+  container: { 
+    display: "flex", 
+    height: "100vh", 
+    background: "#2C3E50", // Keep the general background color
+    color: "white" 
+  },
+  leftPanel: { 
+    width: "40%", 
+    padding: "20px", 
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center",
+    background: "rgb(30, 45, 60)", // Darker version for contrast
+  },
+  rightPanel: { 
+    width: "60%", 
+    background: "rgb(44, 62, 80)", // Original color
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center",
+    textAlign: "center"
+  },
+  logo: {
+    width: "200px", // Increased size
+    height: "auto",
+    marginBottom: "15px",
+    display: "block",
+    objectFit: "contain",
+  },
   toggleText: { color: "#4a90e2", cursor: "pointer" },
 };
+
 
 export default LoginSignup;
