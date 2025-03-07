@@ -14,7 +14,7 @@ const LoginSignup = () => {
     setIsLogin(!isLogin);
   };
 
-  const handleSubmit = async (e) => {
+  /*const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (isLogin) {
@@ -37,9 +37,71 @@ const LoginSignup = () => {
         setIsLogin(true);
       }
     } catch (error) {
+      console.log("Signup response:", signupResponse.data);
+      alert("Something went wrong");
+    }
+  };*/
+
+  /*const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (isLogin) {
+        // Handle login
+        const response = await axios.post("http://localhost:5001/api/login", { username, password });
+  
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("username", response.data.username);
+        localStorage.setItem("role", response.data.role);
+  
+        console.log("Stored role in localStorage:", response.data.role);
+        alert(`Login successful! Your role is ${response.data.role}`);
+        navigate("/chat");
+      } else {
+        // Handle signup
+        const signupResponse = await axios.post("http://localhost:5001/api/signup", { username, password });
+  
+        console.log("Signup response:", signupResponse.data);  // ✅ Debugging
+  
+        alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role || "member"}`);
+        setIsLogin(true);
+      }
+    } catch (error) {
+      console.error("❌ Signup/Login error:", error.response ? error.response.data : error.message);
+      alert(`Error: ${error.response ? error.response.data.error : "Something went wrong"}`);
+    }
+  };*/
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (isLogin) {
+        // Handle login
+        const response = await axios.post("http://localhost:5001/api/login", { username, password });
+  
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("username", response.data.username);
+        localStorage.setItem("role", response.data.role);
+  
+        alert(`Login successful! Your role is ${response.data.role}`);
+        navigate("/chat");
+      } else {
+        // Handle signup
+        const signupResponse = await axios.post("http://localhost:5001/api/signup", {
+          username,
+          password,
+          email: username,  // assuming username is the email
+          name: username,   // set name accordingly
+        });
+  
+        alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role}`);
+        setIsLogin(true);
+      }
+    } catch (error) {
       alert("Something went wrong");
     }
   };
+  
+  
 
   // **Added handleGoogleLoginSuccess for Google login**
   /*const handleGoogleLoginSuccess = (response) => {

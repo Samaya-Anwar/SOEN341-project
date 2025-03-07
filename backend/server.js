@@ -135,7 +135,7 @@ app.post('/api/google-login', async (req, res) => {
 
 
 // **Signup Route**
-app.post("/api/signup", async (req, res) => {
+/*app.post("/api/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -151,14 +151,52 @@ app.post("/api/signup", async (req, res) => {
 
     // Create and save new user
     const newUser = new User({ username, password: hashedPassword, role });
+    console.error("created");
     await newUser.save();
+    console.error("saved");
 
     // Respond back without revealing internal role logic
-    res.json({ message: "User registered successfully. You are assigned a member role." });
+    //res.json({ message: "User registered successfully. You are assigned a member role." });
+    res.json({ message: "User registered successfully.", role: newUser.role });
+
   } catch (err) {
     res.status(500).json({ error: "Signup failed" });
   }
+});*/
+
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { username, password, email, name } = req.body;
+
+    // Check if username already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return res.status(400).json({ error: "Username already exists" });
+
+    // Check if email already exists (you can decide whether this is necessary or not)
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) return res.status(400).json({ error: "Email already exists" });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Set default role to 'member'
+    const role = 'member';  // Everyone starts as member
+
+    // Create new user
+    const newUser = new User({ username, email, name, password: hashedPassword, role });
+    console.log("✅ Created user object:", newUser);
+
+    // Try saving user
+    await newUser.save();
+    console.log("✅ User saved successfully:", newUser);
+
+    res.json({ message: "User registered successfully.", role: newUser.role });
+  } catch (err) {
+    console.error("❌ Signup error:", err);
+    res.status(500).json({ error: "Signup failed" });
+  }
 });
+
 
 // **Admin Assign Role Route** (for admin to assign a role)
 app.post("/api/assign-role", async (req, res) => {
