@@ -15,10 +15,14 @@ app.use(express.json());
 const authRoutes = require("./src/routes/authRoutes");
 const messageRoutes = require("./src/routes/messageRoutes");
 const channelRoutes = require("./src/routes/channelRoutes");
+const summarizationRoutes = require("./src/routes/summarizationRoutes");
+
 
 app.use("/api", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/channels", channelRoutes);
+app.use("/api/summarization", summarizationRoutes);
+
 
 // Root route
 app.get("/", (req, res) => {
