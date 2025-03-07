@@ -136,25 +136,64 @@ const Sidebar = ({ onSelectChat }) => {
 
       {/* **Admin-only button to create a channel** */}
       {role === "admin" && (
-        <Button 
+        /*<Button 
           onClick={createChannel} 
           sx={{ color: "lightblue", marginBottom: 2 }}
         >
           + Add Channel
-        </Button>
+        </Button>*/
+        <Button 
+          onClick={createChannel} 
+          sx={{
+            color: "lightblue",
+            backgroundColor: "transparent",
+            borderRadius: "6px",
+            cursor: "pointer",
+            transition: "background 0.2s ease-in-out",
+            "&:hover": { backgroundColor: "#3a3a3a", color: "white" },
+            marginBottom: 2,
+            textAlign: "left", // Align text like the channels
+          }}
+        >
+  + Add Channel
+</Button>
+
       )}
 
+      {/* **THIS IS NEWWWWWW** */}
       <List>
         {channels.map((channel) => (
-          <ListItem button key={channel.name} onClick={() => onSelectChat(channel.name)}>
+          <ListItem button key={channel.name} onClick={() => onSelectChat(channel.name)}
+            sx={{
+              borderRadius: "6px",
+              cursor: "pointer",
+              transition: "background 0.2s ease-in-out",
+              backgroundColor: "transparent",
+              "&:hover": { backgroundColor: "#40464b" }, // Normal hover effect
+              position: "relative",
+              "&:has(button:hover)": { backgroundColor: "transparent" },
+            }}
+          >
             <ListItemText primary={channel.name} />
             
             {/* **Admin-only button to delete a channel** */}
             {role === "admin" && (
-              <Button 
-                color="error" 
-                onClick={() => deleteChannel(channel.name)} 
-                sx={{ marginLeft: 2 }}
+              <Button
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevents channel click when deleting
+                  deleteChannel(channel.name);
+                }}
+                sx={{
+                  color: "red",
+                  backgroundColor: "transparent",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "background 0.2s ease-in-out",
+                  "&:hover": { backgroundColor: "#1f1f1f" }, // Hover effect for delete button
+                  position: "absolute",
+                  right: "10px",
+                }}
               >
                 Delete
               </Button>

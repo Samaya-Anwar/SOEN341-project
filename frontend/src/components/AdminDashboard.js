@@ -64,7 +64,7 @@ const AdminDashboard = () => {
       <Box sx={{
         width: '100%',
         maxWidth: 600,
-        backgroundColor: '#222',
+        backgroundColor: '#2c2c2c',
         padding: 2,
         borderRadius: 2,
         boxShadow: 2,

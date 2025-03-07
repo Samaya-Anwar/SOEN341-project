@@ -99,9 +99,23 @@ const Chatbox = ({ selectedChat }) => {
               <strong>{msg.sender}:</strong> {msg.content}
             </Typography>
             {(role === "admin" || msg.sender === username) && (
-              <Button onClick={() => deleteMessage(msg._id, msg.sender)} sx={{ marginLeft: 1, color: "red" }}>
+              <Button onClick={() => deleteMessage(msg._id, msg.sender)}
+                sx={{
+                  marginLeft: 1,
+                  color: "red",
+                  backgroundColor: "transparent",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "background 0.2s ease-in-out, color 0.2s ease-in-out",
+                  "&:hover": {
+                    backgroundColor: "#151b18", // Black background on hover
+                    color: "red", // Red text color on hover
+                  },
+                }}
+              >
                 Delete
               </Button>
+            
             )}
           </Box>
         ))}
