@@ -8,6 +8,7 @@ const LoginSignup = () => {
   const [loginData, setLoginData] = useState({
     username: "",
     password: "",
+    role: "member",
   });
   const navigate = useNavigate();
 
@@ -20,7 +21,10 @@ const LoginSignup = () => {
     try {
       if (isLogin) {
         // Handle login
-        const response = await loginUser(loginData);
+        const response = await loginUser({
+          username: loginData.username,
+          password: loginData.password,
+        });
 
         // Store token, username, and role in localStorage
         localStorage.setItem("token", response.data.token);
@@ -31,6 +35,7 @@ const LoginSignup = () => {
         alert(`Login successful! Your role is ${response.data.role}`);
         navigate("/chat"); // Redirect to chat
       } else {
+        console.log("Signup Data Before Sending:", loginData);
         // Handle signup
         const signupResponse = await signUpUser(loginData);
 
@@ -67,6 +72,22 @@ const LoginSignup = () => {
             }
             required
           />
+
+          {/* Show Role Selection Only in Signup Mode */}
+          {!isLogin && (
+            <select
+              value={loginData.role}
+              onChange={(e) => {
+                console.log("Role Selected:", e.target.value); // Debugging
+                setLoginData({ ...loginData, role: e.target.value });
+              }}
+              required
+            >
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
+          )}
+
           <button type="submit">{isLogin ? "Log In" : "Sign Up"}</button>
         </form>
         <p>

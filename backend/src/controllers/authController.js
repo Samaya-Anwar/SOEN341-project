@@ -5,13 +5,12 @@ const { jwtSecret } = require("../config/config");
 
 exports.signup = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body; // Ensure role is extracted from req.body
     const existingUser = await User.findOne({ username });
     if (existingUser)
       return res.status(400).json({ error: "Username already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const role = Math.random() < 0.1 ? "admin" : "member"; // 10% chance of admin
 
     const newUser = new User({ username, password: hashedPassword, role });
     await newUser.save();

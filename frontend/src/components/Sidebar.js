@@ -8,6 +8,7 @@ import {
   Button,
 } from "@mui/material";
 import { io } from "socket.io-client";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { createChannel } from "../api/post/createChannel";
 import { getChannels } from "../api/get/getChannels";
 import { deleteChannel } from "../api/delete/deleteChannel";
@@ -18,6 +19,7 @@ const socket = io(`${API_URL}`);
 const Sidebar = ({ onSelectChat }) => {
   const [channels, setChannels] = useState([]);
   const role = localStorage.getItem("role");
+  const navigate = useNavigate(); // Hook for navigation
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -30,7 +32,6 @@ const Sidebar = ({ onSelectChat }) => {
     };
 
     fetchChannels();
-
     socket.on("channelUpdated", fetchChannels);
 
     return () => socket.off("channelUpdated");
@@ -57,6 +58,14 @@ const Sidebar = ({ onSelectChat }) => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // Remove JWT
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
+
+    navigate("/login"); // Redirect to login page
+  };
+
   return (
     <Box
       sx={{
@@ -65,36 +74,55 @@ const Sidebar = ({ onSelectChat }) => {
         backgroundColor: "#2f3136",
         color: "white",
         padding: 2,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between", // Pushes logout button to bottom
       }}
     >
-      <Typography variant="h6">Channels</Typography>
-      {role === "admin" && (
-        <Button
-          onClick={onCreateChannel}
-          sx={{ color: "lightblue", marginBottom: 1 }}
-        >
-          + Add Channel
-        </Button>
-      )}
-      <List>
-        {channels.map((channel) => (
-          <ListItem
-            button
-            key={channel.name}
-            onClick={() => onSelectChat(channel.name)}
+      <Box>
+        <Typography variant="h6">Channels</Typography>
+        {role === "admin" && (
+          <Button
+            onClick={onCreateChannel}
+            sx={{ color: "lightblue", marginBottom: 1 }}
           >
-            <ListItemText primary={channel.name} />
-            {role === "admin" && (
-              <Button
-                color="error"
-                onClick={() => onDeleteChannel(channel.name)}
-              >
-                Delete
-              </Button>
-            )}
-          </ListItem>
-        ))}
-      </List>
+            + Add Channel
+          </Button>
+        )}
+        <List>
+          {channels.map((channel) => (
+            <ListItem
+              button
+              key={channel.name}
+              onClick={() => onSelectChat(channel.name)}
+            >
+              <ListItemText primary={channel.name} />
+              {role === "admin" && (
+                <Button
+                  color="error"
+                  onClick={() => onDeleteChannel(channel.name)}
+                >
+                  Delete
+                </Button>
+              )}
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+
+      {/* Logout Button */}
+      <Button
+        onClick={handleLogout}
+        sx={{
+          color: "white",
+          backgroundColor: "red",
+          "&:hover": { backgroundColor: "darkred" },
+          marginTop: 2,
+          width: "100%",
+        }}
+      >
+        Logout
+      </Button>
     </Box>
   );
 };
