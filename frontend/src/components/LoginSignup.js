@@ -14,63 +14,6 @@ const LoginSignup = () => {
     setIsLogin(!isLogin);
   };
 
-  /*const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isLogin) {
-        // Handle login
-        const response = await axios.post("http://localhost:5001/api/login", { username, password });
-
-        // Store token, username, and role in localStorage
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("username", response.data.username);
-        localStorage.setItem("role", response.data.role);
-
-        console.log("Stored role in localStorage:", response.data.role); // Debugging
-        alert(`Login successful! Your role is ${response.data.role}`);
-        navigate("/chat"); // Redirect to chat
-      } else {
-        // Handle signup
-        const signupResponse = await axios.post("http://localhost:5001/api/signup", { username, password });
-
-        alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role}`);
-        setIsLogin(true);
-      }
-    } catch (error) {
-      console.log("Signup response:", signupResponse.data);
-      alert("Something went wrong");
-    }
-  };*/
-
-  /*const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isLogin) {
-        // Handle login
-        const response = await axios.post("http://localhost:5001/api/login", { username, password });
-  
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("username", response.data.username);
-        localStorage.setItem("role", response.data.role);
-  
-        console.log("Stored role in localStorage:", response.data.role);
-        alert(`Login successful! Your role is ${response.data.role}`);
-        navigate("/chat");
-      } else {
-        // Handle signup
-        const signupResponse = await axios.post("http://localhost:5001/api/signup", { username, password });
-  
-        console.log("Signup response:", signupResponse.data);  // ✅ Debugging
-  
-        alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role || "member"}`);
-        setIsLogin(true);
-      }
-    } catch (error) {
-      console.error("❌ Signup/Login error:", error.response ? error.response.data : error.message);
-      alert(`Error: ${error.response ? error.response.data.error : "Something went wrong"}`);
-    }
-  };*/
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -101,18 +44,6 @@ const LoginSignup = () => {
     }
   };
   
-  
-
-  // **Added handleGoogleLoginSuccess for Google login**
-  /*const handleGoogleLoginSuccess = (response) => {
-    console.log('Google Login Successful!', response);
-    const { credential } = response;
-
-    // Store Google token in localStorage
-    localStorage.setItem('token', credential);
-    navigate('/chat'); // Redirect to chat
-  };*/
-
   // **Added handleGoogleLoginFailure for error handling**
   const handleGoogleLoginFailure = (error) => {
     console.error('Google Login Failed!', error);
@@ -147,71 +78,6 @@ const LoginSignup = () => {
       alert('Google login failed. Please try again.');
     }
   };
-
-
-  //THIS IS NEW
-  /*const handleGoogleLoginSuccess = async (response) => {
-    console.log('Google Login Successful!', response); // Log the entire response
-    const { credential } = response; // This should be the Google token
-  
-    try {
-      console.log('Sending token to backend:', credential); // Log token before sending to backend
-  
-      // Send Google token to backend for verification
-      const googleResponse = await axios.post("http://localhost:5001/api/google-login", { token: credential });
-      console.log('Backend response:', googleResponse.data); // Log the backend response
-  
-      // Check if the response contains the expected fields
-      if (googleResponse.data.token && googleResponse.data.username && googleResponse.data.role) {
-        // Store token, username, and role in localStorage
-        localStorage.setItem("token", googleResponse.data.token);
-        localStorage.setItem("username", googleResponse.data.username);
-        localStorage.setItem("role", googleResponse.data.role);
-  
-        console.log("Google login stored role:", googleResponse.data.role); // Debugging
-        alert(`Google Login successful! Your role is ${googleResponse.data.role}`);
-  
-        navigate('/chat'); // Redirect to chat
-      } else {
-        alert('Unexpected response from server. Please try again.');
-      }
-    } catch (error) {
-      console.error('Google Login Verification Failed:', error);
-      alert('Google login failed. Please try again.');
-    }
-  };*/
-
-  /*const responseGoogle = (response) => {
-    console.log(response);
-    if (response.tokenId) {
-      // Send tokenId to backend for verification and login
-      fetch('http://localhost:5001/api/google-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: response.tokenId }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          console.log('Login successful:', data);
-          // Handle success (e.g., store token, redirect, etc.)
-        })
-        .catch(err => {
-          console.error('Login error:', err);
-        });
-    }
-  };
-  
-  return (
-    <GoogleLogin
-      clientId="Y198072547047-vtauj833icvolq5cs13i4ted4gs9a6d8.apps.googleusercontent.com"
-      buttonText="Login with Google"
-      onSuccess={responseGoogle}
-      onFailure={responseGoogle}
-      cookiePolicy="single_host_origin"
-    />
-  );*/
 
   return (
     <div style={styles.container}>
