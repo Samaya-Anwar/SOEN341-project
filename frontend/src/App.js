@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import Hero from "./components/Hero";
 import LoginSignup from "./components/LoginSignup";
 import Sidebar from "./components/Sidebar";
 import Chatbox from "./components/Chatbox";
@@ -10,7 +11,8 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<LoginSignup />} />
+      <Route path="/" element={<Hero />} />
+      <Route path="/login" element={<LoginSignup />} />
       <Route
         path="/chat"
         element={

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signUpUser } from "../api/post/signUpUser";
 import { loginUser } from "../api/post/loginUser";
+import { ChevronDownIcon } from "@heroicons/react/16/solid";
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -50,89 +51,130 @@ const LoginSignup = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.leftPanel}>
-        <h2>{isLogin ? "Log In" : "Sign Up"}</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={loginData.username}
-            onChange={(e) =>
-              setLoginData({ ...loginData, username: e.target.value })
-            }
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={loginData.password}
-            onChange={(e) =>
-              setLoginData({ ...loginData, password: e.target.value })
-            }
-            required
-          />
+    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+        <a href="/">
+          <img alt="ChatApp" src="./logo.png" className="mx-auto h-18 w-auto" />
+        </a>
 
-          {/* Show Role Selection Only in Signup Mode */}
-          {!isLogin && (
-            <select
-              value={loginData.role}
-              onChange={(e) => {
-                console.log("Role Selected:", e.target.value); // Debugging
-                setLoginData({ ...loginData, role: e.target.value });
-              }}
-              required
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-          )}
-
-          <button type="submit">{isLogin ? "Log In" : "Sign Up"}</button>
-        </form>
-        <p>
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-          <span style={styles.toggleText} onClick={toggleForm}>
-            {isLogin ? "Sign Up" : "Log In"}
-          </span>
-        </p>
-      </div>
-      <div style={styles.rightPanel}>
-        <h1>Welcome to ChatApp</h1>
-        <p>
+        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
           {isLogin
             ? "Log in to continue chatting."
             : "Create an account to start chatting."}
-        </p>
+        </h2>
+      </div>
+
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm/6 font-medium text-gray-900"
+            >
+              Username
+            </label>
+            <div className="mt-2">
+              <input
+                id="username"
+                name="username"
+                type="username"
+                required
+                autoComplete="email"
+                placeholder="Username"
+                value={loginData.username}
+                onChange={(e) =>
+                  setLoginData({ ...loginData, username: e.target.value })
+                }
+                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+              />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="password"
+                className="block text-sm/6 font-medium text-gray-900"
+              >
+                Password
+              </label>
+              <div className="text-sm">
+                <a
+                  href="/"
+                  className="font-semibold text-indigo-600 hover:text-indigo-500"
+                >
+                  Forgot password?
+                </a>
+              </div>
+            </div>
+            <div className="mt-2">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                placeholder="Password"
+                value={loginData.password}
+                onChange={(e) =>
+                  setLoginData({ ...loginData, password: e.target.value })
+                }
+                autoComplete="current-password"
+                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+              />
+            </div>
+          </div>
+          {/* Show Role Selection Only in Signup Mode */}
+          {!isLogin && (
+            <div>
+              <label
+                htmlFor="Role"
+                className="block text-sm/6 font-medium text-gray-900"
+              >
+                Role
+              </label>
+              <div className="grid shrink-0 grid-cols-1 focus-within:relative">
+                <select
+                  value={loginData.role}
+                  onChange={(e) => {
+                    console.log("Role Selected:", e.target.value);
+                    setLoginData({ ...loginData, role: e.target.value });
+                  }}
+                  required
+                  className="col-start-1 row-start-1 w-full appearance-none rounded-md px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-2 focus:-outline-offset-2  focus:outline-indigo-600 sm:text-sm/6"
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <ChevronDownIcon
+                  aria-hidden="true"
+                  className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              {isLogin ? "Log In" : "Sign Up"}
+            </button>
+            <p className="mt-10 text-center text-sm/6 text-gray-500">
+              {isLogin ? "Not a member ?" : "Already a member?"}{" "}
+              <div className="text-indigo-600 ">
+                <a
+                  className="sm:mx-auto sm:w-full sm:max-w-sm hover:text-indigo-500"
+                  onClick={toggleForm}
+                >
+                  {isLogin ? "Sign up" : "Log in"}
+                </a>
+              </div>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: "flex",
-    height: "100vh",
-    backgroundColor: "#1e1e2f",
-    color: "white",
-  },
-  leftPanel: {
-    width: "40%",
-    padding: "20px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rightPanel: {
-    width: "60%",
-    backgroundColor: "#252542",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toggleText: { color: "#4a90e2", cursor: "pointer" },
 };
 
 export default LoginSignup;
