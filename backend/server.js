@@ -29,6 +29,26 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
+function generateJWT(user) {
+  return jwt.sign(
+    { username: user.username, role: user.role }, // Payload (data to store in token)
+    process.env.JWT_SECRET,                       // Secret key to sign the token
+    { expiresIn: '7d' }                          // Token expiration time (7 days)
+  );
+}
+
+// Function to verify Google token
+async function verifyGoogleToken(idToken) {
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,  // Ensure this matches your Google Client ID
+  });
+
+  const payload = ticket.getPayload();
+  return payload;  // This will return the Google user data
+}
+
+
 app.use(cors({ origin: "http://localhost:3000" }));
 //app.use(cors());
 app.use(express.json());
@@ -77,25 +97,42 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-// **Fetch current user**
-// Define the route to get the current user
-app.get('/api/current-user', authenticateToken, async (req, res) => {
-  console.log('Fetching current user...');
+// **Get Current User - Regular Login**
+app.get("/api/get-current-user", async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    const token = req.headers.authorization?.split(" ")[1];  // Extract token from Authorization header
+    if (!token) return res.status(400).json({ error: "Token missing" });
+
+    // Decode the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if the user logged in via Google or regular authentication
+    if (decoded.username) {
+      // Handle regular user (logged in via username/password)
+      const user = await User.findOne({ username: decoded.username });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      return res.json({ username: user.username, role: user.role });
+    } else if (decoded.email) {
+      // Handle Google user (logged in via Google)
+      const user = await User.findOne({ username: decoded.email });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      return res.json({ username: user.username, role: user.role });
     }
-    res.json({ username: user.username, role: user.role });
+
+    // If neither, return an error
+    return res.status(400).json({ error: "Invalid token" });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error fetching current user' });
+    return res.status(500).json({ error: "Error fetching current user" });
   }
 });
 
 
 // **Login Route**
-/*app.post("/api/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
@@ -105,86 +142,50 @@ app.get('/api/current-user', authenticateToken, async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid username or password" });
 
+    // Directly generate the JWT
     const token = jwt.sign({ username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     res.json({ token, username: user.username, role: user.role });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
   }
-});*/
-// Login API Route Example
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-
-  const user = await User.findOne({ username });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).send("Invalid credentials");
-  }
-
-  // Log the user object to check role before sending it in the response
-  console.log('Login - User details:', user);
-
-  const token = generateJWT(user);  // Assuming you have a function to generate JWT
-  return res.json({
-      token,
-      username: user.username,
-      role: user.role,  // Send role here
-  });
 });
 
 // **Google Login Route**
-app.post('/api/google-login', async (req, res) => {
+app.post("/api/google-login", async (req, res) => {
   try {
-      const { token } = req.body;
+    const { token: googleToken } = req.body; // Rename to avoid conflict
 
-      if (!token) {
-          return res.status(400).json({ error: "Missing token" });
-      }
-
-      // Verify Google token and get user info
-      const decodedToken = jwt.decode(token);
-      console.log("Decoded Token:", decodedToken);  // ✅ Log token
-
-      const { email, name } = decodedToken;
-      console.log('Email:', email);
-
-      // Set username to email or fallback to a safe value
-      let username = email;  // Ensure that username is set to email
-
-      if (!username) {
-        // Fallback if email is not available (but this shouldn't happen)
-        username = `user_${Date.now()}`;
-      }
-      console.log('Username:', username);
-
-    // Check if the user already exists in the database
-    let existingUser = await User.findOne({ username });
-
-    // If user doesn't exist, create a new user
-    if (!existingUser) {
-      const newUser = new User({
-        username,  // Use email as username
-        email,
-        name,
-        role: 'member',  // Set default role, can be changed as needed
+    // Verify the Google token and fetch user data
+    const googleUser = await verifyGoogleToken(googleToken); // Assume you have a function to verify Google token
+    
+    // Check if user exists in your database
+    let user = await User.findOne({ username: googleUser.email });
+    
+    if (!user) {
+      // If the user doesn't exist, create a new user
+      user = new User({
+        username: googleUser.email,
+        role: 'member',  // Default role for new users (could be 'admin' for specific cases)
+        password: '',    // Google login users don't need a password
       });
-
-      await newUser.save();
-      console.log('New user created:', newUser);
-      existingUser = newUser;  // Set the existing user to the new one we just created
+      await user.save();
     }
 
-    // Send the user info and token to the frontend
+    // Generate a JWT for the Google login user
+    const jwtToken = generateJWT(user); // Renaming to avoid conflict with googleToken
+
     res.json({
-      token: jwt.sign({ id: existingUser._id }, 'your_jwt_secret', { expiresIn: '1h' }),
-      username: existingUser.username,
-      role: existingUser.role,
+      token: jwtToken,
+      username: user.username,
+      role: user.role,
     });
   } catch (error) {
-    console.error('Error during Google login:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Google login error:", error);
+    res.status(500).json({ error: "Google login failed" });
   }
 });
+
 
 app.post("/api/signup", async (req, res) => {
   try {
