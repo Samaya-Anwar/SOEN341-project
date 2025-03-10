@@ -14,7 +14,7 @@ const LoginSignup = () => {
     setIsLogin(!isLogin);
   };
 
-  const handleSubmit = async (e) => {
+  /*const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (isLogin) {
@@ -42,7 +42,54 @@ const LoginSignup = () => {
     } catch (error) {
       alert("Something went wrong");
     }
-  };
+  };*/
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (isLogin) {
+        // Handle login
+        const response = await axios.post("http://localhost:5001/api/login", { username, password });
+  
+        console.log("Login response:", response.data);  // Log the full response here
+  
+        if (response.data && response.data.role) {
+          // If role exists, store it
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("username", response.data.username);
+          localStorage.setItem("role", response.data.role);  // Store the role
+  
+          console.log("Stored role:", response.data.role);  // Debugging log
+          alert(`Login successful! Your role is ${response.data.role}`);
+          navigate("/chat");
+        } else {
+          console.error("Role is missing in the response:", response.data);
+          alert("Role not found in the response");
+        }
+      } else {
+        // Handle signup
+        const signupResponse = await axios.post("http://localhost:5001/api/signup", {
+          username,
+          password,
+          email: username,  // assuming username is the email
+          name: username,   // set name accordingly
+        });
+  
+        console.log("Signup response:", signupResponse.data);  // Log the full response
+  
+        localStorage.setItem("token", signupResponse.data.token);
+        localStorage.setItem("username", signupResponse.data.username);
+        localStorage.setItem("role", signupResponse.data.role);  // Store role
+  
+        alert(`Signup successful! You have been assigned the role: ${signupResponse.data.role}`);
+        setIsLogin(true);
+      }
+    } catch (error) {
+      console.error("Error during login/signup:", error);
+      alert("Something went wrong");
+    }
+  };  
+  
   
   // **Added handleGoogleLoginFailure for error handling**
   const handleGoogleLoginFailure = (error) => {

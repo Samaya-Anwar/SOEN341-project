@@ -5,17 +5,47 @@ import { Button, Typography, FormControlLabel, Checkbox, Box, TextField } from '
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [editedUsers, setEditedUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(''); // New state for search input
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);  // To store current logged-in user
+
+  // List of default admins that cannot have their role removed
+  const defaultAdmins = ["defaultadmin1", "defaultadmin2", "defaultadmin3"];
 
   useEffect(() => {
-    // Fetch all users from the backend
-    axios.get("http://localhost:5001/api/users")
-      .then((response) => {
-        setUsers(response.data);
-        setEditedUsers(response.data); // Initialize with the current users' data
-      })
-      .catch((error) => console.error('Error fetching users:', error));
-  }, []);
+    const token = localStorage.getItem("token"); // Retrieve stored token
+  
+    if (!token) {
+      console.error("No token found, user might not be logged in.");
+      return;
+    }
+  
+    // Fetch all users
+    axios.get("http://localhost:5001/api/users", {
+      headers: { Authorization: `Bearer ${token}` }, // Attach token
+    })
+    .then((response) => {
+      setUsers(response.data);
+      setEditedUsers(response.data);
+      console.log("Fetched Users:", response.data);
+    })
+    .catch((error) => console.error("Error fetching users:", error));
+  
+    // Fetch current user
+    axios.get("http://localhost:5001/api/get-current-user", {
+      headers: { Authorization: `Bearer ${token}` }, // Attach token
+    })
+    .then((response) => {
+      console.log("Current User Data:", response.data);
+      setCurrentUser(response.data);
+    })
+    .catch((error) => console.error("Error fetching current user:", error));
+  }, []);  
+
+  useEffect(() => {
+    if (currentUser) {
+      console.log("Current User Loaded:", currentUser);
+    }
+  }, [currentUser]);
 
   const handleRoleChange = (username, checked) => {
     setEditedUsers(editedUsers.map(user =>
@@ -45,6 +75,37 @@ const AdminDashboard = () => {
     user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Sort the users: first by alphabetical order, then by numbers (users starting with numbers will come after letters)
+  const sortedUsers = filteredUsers.sort((a, b) => {
+    const usernameA = a.username.toLowerCase();
+    const usernameB = b.username.toLowerCase();
+
+    const isANumber = /^\d/.test(usernameA);
+    const isBNumber = /^\d/.test(usernameB);
+
+    if (!isANumber && !isBNumber) {
+      return usernameA.localeCompare(usernameB);
+    } else if (isANumber && !isBNumber) {
+      return 1; // Numbers come after letters
+    } else if (!isANumber && isBNumber) {
+      return -1; // Letters come before numbers
+    }
+    return 0;
+  });
+
+  // Debugging logs for the conditions
+  sortedUsers.forEach((user) => {
+    console.log("Checking conditions for:", user.username);
+    console.log("Current User Role:", currentUser?.role);
+    console.log("Is Current User Admin:", currentUser?.role === 'admin');
+    console.log("Is Current User Not Default Admin:", !defaultAdmins.includes(currentUser?.username));
+    console.log("Is Target User Admin:", user.role === 'admin');
+    console.log("Is Target User Default Admin:", defaultAdmins.includes(user.username));
+    console.log("Condition Check:", 
+      (currentUser?.role === 'admin' && !defaultAdmins.includes(currentUser?.username) && user.role === 'admin')
+    );
+  });  
+
   return (
     <Box sx={{
       display: 'flex',
@@ -60,7 +121,6 @@ const AdminDashboard = () => {
       <Typography variant="h4" gutterBottom color="inherit">Admin Dashboard</Typography>
       <Typography variant="h6" gutterBottom color="inherit">Manage User Roles</Typography>
 
-      {/* Box to contain search bar and users list with a darker background */}
       <Box sx={{
         width: '100%',
         maxWidth: 600,
@@ -69,7 +129,6 @@ const AdminDashboard = () => {
         borderRadius: 2,
         boxShadow: 2,
       }}>
-        {/* Search bar to filter users */}
         <TextField
           label="Search by Member Name"
           variant="outlined"
@@ -89,9 +148,8 @@ const AdminDashboard = () => {
           }}
         />
 
-        {/* List of users with checkboxes to change roles */}
         <Box sx={{ width: '100%' }}>
-          {filteredUsers.map((user) => (
+          {sortedUsers.map((user) => (
             <Box key={user.username} sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
               <Typography sx={{ flexGrow: 1 }} color="inherit">
                 {user.username} - {user.role}
@@ -102,6 +160,12 @@ const AdminDashboard = () => {
                     checked={user.role === 'admin'}
                     onChange={(e) => handleRoleChange(user.username, e.target.checked)}
                     color="primary"
+                    disabled={
+                      // Default admins cannot uncheck their admin role
+                      defaultAdmins.includes(user.username) ||
+                      // If the logged-in user is NOT a default admin, they cannot change any admin's role
+                      (currentUser?.role === 'admin' && user.role === 'admin' && !defaultAdmins.includes(currentUser.username))
+                    }
                   />
                 }
                 label="Admin"
@@ -111,7 +175,6 @@ const AdminDashboard = () => {
         </Box>
       </Box>
 
-      {/* Save and Cancel buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, width: '100%', maxWidth: 600 }}>
         <Button variant="outlined" color="secondary" onClick={handleCancelChanges}>
           Cancel

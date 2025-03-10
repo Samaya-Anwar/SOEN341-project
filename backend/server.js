@@ -12,6 +12,23 @@ const client = new OAuth2Client("198072547047-vtauj833icvolq5cs13i4ted4gs9a6d8.a
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// **Token Authentication Middleware**
+const authenticateToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1]; // Extract token from header
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  }
+
+  try {
+    // Verify token and attach user data to the request
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id; // Assuming the JWT contains the user's ID
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: "Unauthorized: Invalid token" });
+  }
+};
+
 app.use(cors({ origin: "http://localhost:3000" }));
 //app.use(cors());
 app.use(express.json());
@@ -60,8 +77,25 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
+// **Fetch current user**
+// Define the route to get the current user
+app.get('/api/current-user', authenticateToken, async (req, res) => {
+  console.log('Fetching current user...');
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ username: user.username, role: user.role });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error fetching current user' });
+  }
+});
+
+
 // **Login Route**
-app.post("/api/login", async (req, res) => {
+/*app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
@@ -77,6 +111,25 @@ app.post("/api/login", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
   }
+});*/
+// Login API Route Example
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await User.findOne({ username });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).send("Invalid credentials");
+  }
+
+  // Log the user object to check role before sending it in the response
+  console.log('Login - User details:', user);
+
+  const token = generateJWT(user);  // Assuming you have a function to generate JWT
+  return res.json({
+      token,
+      username: user.username,
+      role: user.role,  // Send role here
+  });
 });
 
 // **Google Login Route**
@@ -133,37 +186,6 @@ app.post('/api/google-login', async (req, res) => {
   }
 });
 
-
-// **Signup Route**
-/*app.post("/api/signup", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    // Check if username already exists
-    const existingUser = await User.findOne({ username });
-    if (existingUser) return res.status(400).json({ error: "Username already exists" });
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Set default role to 'member'
-    const role = 'member';  // Everyone starts as member
-
-    // Create and save new user
-    const newUser = new User({ username, password: hashedPassword, role });
-    console.error("created");
-    await newUser.save();
-    console.error("saved");
-
-    // Respond back without revealing internal role logic
-    //res.json({ message: "User registered successfully. You are assigned a member role." });
-    res.json({ message: "User registered successfully.", role: newUser.role });
-
-  } catch (err) {
-    res.status(500).json({ error: "Signup failed" });
-  }
-});*/
-
 app.post("/api/signup", async (req, res) => {
   try {
     const { username, password, email, name } = req.body;
@@ -197,16 +219,23 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-
-// **Admin Assign Role Route** (for admin to assign a role)
+// **Admin Assign Role Route**
 app.post("/api/assign-role", async (req, res) => {
   try {
     const { username, newRole } = req.body;
-
+    
+    // List of default admins
+    const defaultAdmins = ["defaultadmin1", "defaultadmin2", "defaultadmin3"];
+    
     // Ensure that only an admin can assign roles
     const loggedInUser = await User.findById(req.userId); // Assume you are validating JWT token and extracting userId
     if (loggedInUser.role !== "admin") {
       return res.status(403).json({ error: "Unauthorized: Only admins can assign roles" });
+    }
+
+    // If trying to modify default admins, deny the request
+    if (defaultAdmins.includes(username) && newRole !== "admin") {
+      return res.status(400).json({ error: "Cannot change role of default admin" });
     }
 
     // Find the user and update their role
@@ -228,6 +257,7 @@ app.post("/api/assign-role", async (req, res) => {
     res.status(500).json({ error: "Failed to update role" });
   }
 });
+
 
 app.put("/api/users/assign-role", async (req, res) => {
   const { username, role } = req.body;
