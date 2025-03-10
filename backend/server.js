@@ -259,19 +259,19 @@ app.post("/api/assign-role", async (req, res) => {
   }
 });
 
-
-app.put("/api/users/assign-role", async (req, res) => {
-  const { username, role } = req.body;
+app.put('/api/users/assign-role', async (req, res) => {
   try {
-    const user = await User.findOne({ username });
+    const { username, role } = req.body;
+    
+    // Find the user and update their role
+    const user = await User.findOneAndUpdate({ username }, { role }, { new: true });
+
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    user.role = role; // Update the role
-    await user.save();
-
-    res.json({ message: "User role updated successfully" });
+    res.json({ message: "Role updated successfully", user });
   } catch (error) {
-    res.status(500).json({ error: "Error updating user role" });
+    console.error("Error updating role:", error);
+    res.status(500).json({ error: "Error updating role" });
   }
 });
 

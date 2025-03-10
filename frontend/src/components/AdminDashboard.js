@@ -60,11 +60,16 @@ const AdminDashboard = () => {
           username: user.username,
           role: user.role,
         })
-        .then(() => console.log(`Updated role for ${user.username}`))
-        .catch((error) => console.error(`Error updating role for ${user.username}:`, error));
+        .then((response) => {
+          console.log(`Updated role for ${user.username}`, response.data);
+        })
+        .catch((error) => {
+          console.error(`Error updating role for ${user.username}:`, error);
+        });
       }
     });
   };
+  
 
   const handleCancelChanges = () => {
     setEditedUsers(users);
