@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { signUpUser } from "../api/post/signUpUser";
 import { loginUser } from "../api/post/loginUser";
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
-
+import axios from "axios";
+import { GoogleLogin } from "@react-oauth/google";
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loginData, setLoginData] = useState({
@@ -47,6 +48,42 @@ const LoginSignup = () => {
       }
     } catch (error) {
       alert("Something went wrong");
+    }
+  };
+  const handleGoogleLoginFailure = (error) => {
+    console.error("Google Login Failed!", error);
+  };
+
+  const handleGoogleLoginSuccess = async (response) => {
+    const { credential } = response; // Google token
+    try {
+      console.log("Sending token to backend:", credential); // Log token before sending to backend
+
+      const googleResponse = await axios.post(
+        "http://localhost:5001/api/google-login",
+        { token: credential }
+      );
+      console.log("Backend response:", googleResponse.data); // Log the backend response
+
+      // Store the token, username, and role
+      if (
+        googleResponse.data.token &&
+        googleResponse.data.username &&
+        googleResponse.data.role
+      ) {
+        localStorage.setItem("token", googleResponse.data.token);
+        localStorage.setItem("username", googleResponse.data.username);
+        localStorage.setItem("role", googleResponse.data.role); // Store role
+        alert(
+          `Google Login successful! Your role is ${googleResponse.data.role}`
+        );
+        navigate("/chat");
+      } else {
+        alert("Unexpected response from server. Please try again.");
+      }
+    } catch (error) {
+      console.error("Google Login Verification Failed:", error);
+      alert("Google login failed. Please try again.");
     }
   };
 
@@ -151,7 +188,15 @@ const LoginSignup = () => {
               </div>
             </div>
           )}
-
+          <button className="flex w-full justify-center rounded-md  px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs   ">
+            {/* **Added GoogleLogin button for Google login** */}
+            {isLogin && (
+              <GoogleLogin
+                onSuccess={handleGoogleLoginSuccess}
+                onError={handleGoogleLoginFailure}
+              />
+            )}
+          </button>
           <div>
             <button
               type="submit"
@@ -159,6 +204,7 @@ const LoginSignup = () => {
             >
               {isLogin ? "Log In" : "Sign Up"}
             </button>
+
             <p className="mt-10 text-center text-sm/6 text-gray-500">
               {isLogin ? "Not a member ?" : "Already a member?"}{" "}
               <div className="text-indigo-600 ">
