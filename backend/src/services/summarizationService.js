@@ -3,8 +3,29 @@ const { openaiApiKey } = require("../config/config");
 
 async function generateSummary(messages) {
   const conversation = messages.join("\n");
-  const prompt = `Summarize the following conversation:\n${conversation}`;
-
+  const sys_prompt = `You are a professional chat summarizer. Your task is to generate a concise, 
+                  clear summary of a conversation in bullet points. In your summary, focus on the main topics 
+                  discussed, decisions made, and any action items. The summary should not include verbatim quotes from the conversation.
+                  
+                  Example input: Alice: Hi everyone, are we still on for the meeting at 3 PM today?
+                  Bob: Yes, the meeting is confirmed.
+                  Charlie: I might be a few minutes late due to traffic.
+                  Alice: Great, please review the quarterly report before joining.
+                  Bob: I'll send out the report via email right away.
+                  Alice: Thanks Bob. Let's also discuss the upcoming project deadlines.
+                  Charlie: Agreed. I'll prepare a draft timeline.
+                  
+                  Example output: • The 3pm meeting is confirmed. 
+                                  • Charlie might be late due to traffic.
+                                  • Bob wills send out the quarterly report via email and it must be reviewed before joining the meeting.
+                                  • Charlie will prepare a draft timeline for the project deadlines that will be dicussed.
+                  
+                  Summarize the conversation delimited by triple quotes`;
+  
+  const prompt = `"""${conversation}"""`;
+  
+  
+  
   try {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
@@ -13,7 +34,7 @@ async function generateSummary(messages) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that summarizes chat conversations."
+            content: sys_prompt
           },
           {
             role: "user",
