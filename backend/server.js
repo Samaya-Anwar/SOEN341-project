@@ -37,20 +37,29 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.ID} joined channel: ${channel}`);
   });
 
-//incomplete
-  socket.on("privateMessage", ({senderID, receiverID, message}) =>{
-   
-    if(!privateMessages.has(`${senderID}-${receiverID}`))
-    {
-      privateMessages.set(`${senderID}-${receiverID}`,[]);
-    }
-    const conversation = privateMessages.get(`${senderID}-${receiverID}`);
-    conversation.push({
+socket.on("privateMessage", ({ senderID, receiverID, message }) => {
+  console.log(`Private message from ${senderID} to ${receiverID}: ${message}`);
+  // Look up the receiver's socket ID in the users map
+  const receiverSocketId = users.get(receiverID);
+  if (receiverSocketId) {
+    // Emit the message to the receiver
+    io.to(receiverSocketId).emit("newMessage", {
       sender: senderID,
+      receiver: receiverID,
       content: message,
-      //Questionable
-      timestamp: new Date()
+      timestamp: new Date().toISOString(),
     });
+    // Optionally, also emit back to the sender to update their UI
+    io.to(socket.id).emit("newMessage", {
+      sender: senderID,
+      receiver: receiverID,
+      content: message,
+      timestamp: new Date().toISOString(),
+    });
+  } else {
+    console.log(`Receiver ${receiverID} is not connected.`);
+  }
+});
     
     const receiverSocket = users.get(receiverID);
     if(receiverSocket){
