@@ -13,6 +13,7 @@ afterAll(async () => {
   await mongoose.connection.close(); // ✅ Close MongoDB connection
 });
 
+//Checks if message is sent to the DB
 test("✅ Should store a message in the database", async () => {
   const messageData = {
     sender: "samaya",
