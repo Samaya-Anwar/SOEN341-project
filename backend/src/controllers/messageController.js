@@ -13,6 +13,7 @@ exports.sendMessage = async (req, res) => {
     io.to(channel).emit("newMessage", newMessage); // Emit to correct channel
     res.status(201).json(newMessage);
   } catch (err) {
+    a;
     console.error("Error sending message:", err);
     res.status(500).json({ error: "Message could not be sent" });
   }
