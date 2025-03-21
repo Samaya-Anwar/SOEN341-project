@@ -30,3 +30,17 @@ test("✅ Should store a message in the database", async () => {
   expect(savedMessage.content).toBe("Hello!");
   expect(savedMessage.channel).toBe("Channel1"); // ✅ Fix incorrect expected value
 });
+
+test("✅ Should retrieve messages for a specific channel", async () => {
+  await Message.create([
+    { sender: "zak", content: "Hey", channel: "General" },
+    { sender: "zak2", content: "Hi", channel: "General" },
+  ]);
+
+  const res = await request(app).get("/api/messages/General");
+
+  expect(res.status).toBe(200);
+  expect(Array.isArray(res.body)).toBe(true);
+  expect(res.body.length).toBe(2);
+  expect(res.body[0].channel).toBe("General");
+});
