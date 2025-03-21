@@ -8,7 +8,7 @@ const server = http.createServer(app);
 //not sure if this would work
 const users = new Map();// 
 const channels = new Map(); //
-const privateMesages = new Map(); //
+const privateMessages = new Map(); //
 //
 
 const io = new Server(server, {
@@ -40,7 +40,34 @@ io.on("connection", (socket) => {
 //incomplete
   socket.on("privateMessage", ({senderID, receiverID, message}) =>{
    
+    if(!privateMessages.has(`${senderID}-${receiverID}`))
+    {
+      privateMessages.set(`${senderID}-${receiverID}`,[]);
+    }
+    const conversation = privateMessages.get(`${senderID}-${receiverID}`);
+    conversation.push({
+      sender: senderID,
+      content: message,
+      //Questionable
+      timestamp: new Date()
+    });
+    
+    const receiverSocket = users.get(receiverID);
+    if(receiverSocket){
+      io.to(receiverSocket).emit("newPrivateMessage",{
+        sender: senderID,
+      content: message,
+      //Questionable
+      timestamp: new Date()
+    });
+    }
 
+    socket.emit("privateMessageSent", {
+      receiver: receiverID,
+      content: message,
+      //Questionable
+      timestamp: new Date()
+    })
 
 
   });
@@ -53,5 +80,6 @@ io.on("connection", (socket) => {
     console.log("User disconnected");
   });
 });
+
 
 server.listen(port, () => console.log(`🚀 Server running on port ${port}`));
