@@ -13,6 +13,19 @@ afterAll(async () => {
   await mongoose.connection.close(); // ✅ Close MongoDB connection
 });
 
+test("✅ Should sign up a new user", async () => {
+  const newUser = {
+    username: "testuser123",
+    password: "testpassword",
+    role: "member",
+  };
+
+  const res = await request(app).post("/api/signup").send(newUser);
+
+  expect(res.status).toBe(200);
+  expect(res.body).toHaveProperty("message", "User registered successfully");
+});
+
 test("✅ Should authenticate user and return JWT token", async () => {
   const loginData = {
     username: "zak",
