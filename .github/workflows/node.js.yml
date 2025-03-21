@@ -9,8 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    environment: ci  # 👈 uses the environment you defined in GitHub
 
-    # Spin up a MongoDB service for your test
     services:
       mongo:
         image: mongo
@@ -21,6 +21,12 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+
+    env:  # 👈 load secrets from the environment
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -40,7 +46,6 @@ jobs:
         run: npm test
         working-directory: backend
 
-      # Optional: Display test summary
       - name: 💡 Show test results if failed
         if: failure()
         run: cat backend/test-results.log || true
