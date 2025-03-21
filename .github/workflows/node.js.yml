@@ -1,0 +1,46 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Spin up a MongoDB service for your test
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🧰 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: 🧪 Run tests
+        run: npm test
+        working-directory: backend
+
+      # Optional: Display test summary
+      - name: 💡 Show test results if failed
+        if: failure()
+        run: cat backend/test-results.log || true
