@@ -16,17 +16,31 @@ afterAll(async () => {
 //Checks if message is sent to the DB
 test("✅ Should store a message in the database", async () => {
   const messageData = {
-    sender: "samaya",
+    sender: "zak",
     content: "Hello!",
-    channel: "Channel1",
+    channel: "General",
   };
 
   const res = await request(app).post("/api/messages").send(messageData);
 
   expect(res.status).toBe(201);
 
-  const savedMessage = await Message.findOne({ sender: "samaya" });
+  const savedMessage = await Message.findOne({ sender: "zak" });
   expect(savedMessage).toBeTruthy();
   expect(savedMessage.content).toBe("Hello!");
-  expect(savedMessage.channel).toBe("Channel1"); // ✅ Fix incorrect expected value
+  expect(savedMessage.channel).toBe("General"); // ✅ Fix incorrect expected value
+});
+
+test("✅ Should retrieve messages for a specific channel", async () => {
+  await Message.create([
+    { sender: "zak", content: "Hey", channel: "General" },
+    { sender: "zak2", content: "Hi", channel: "General" },
+  ]);
+
+  const res = await request(app).get("/api/messages/General");
+
+  expect(res.status).toBe(200);
+  expect(Array.isArray(res.body)).toBe(true);
+  expect(res.body.length).toBe(2);
+  expect(res.body[0].channel).toBe("General");
 });
