@@ -162,12 +162,13 @@ const LoginSignup = () => {
             <p className="mt-10 text-center text-sm/6 text-gray-500">
               {isLogin ? "Not a member ?" : "Already a member?"}{" "}
               <div className="text-indigo-600 ">
-                <a
-                  className="sm:mx-auto sm:w-full sm:max-w-sm hover:text-indigo-500"
+                <button
+                  type="button"
+                  className="sm:mx-auto sm:w-full sm:max-w-sm text-indigo-600 hover:text-indigo-500 bg-transparent border-none p-0 cursor-pointer"
                   onClick={toggleForm}
                 >
                   {isLogin ? "Sign up" : "Log in"}
-                </a>
+                </button>
               </div>
             </p>
           </div>
