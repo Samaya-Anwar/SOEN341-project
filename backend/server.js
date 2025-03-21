@@ -8,7 +8,7 @@ const server = http.createServer(app);
 //not sure if this would work
 const users = new Map();// 
 const channels = new Map(); //
-const privateMesages = new Map(); //
+const privateMessages = new Map(); //
 //
 
 const io = new Server(server, {
@@ -37,10 +37,46 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.ID} joined channel: ${channel}`);
   });
 
-//incomplete
-  socket.on("privateMessage", ({senderID, receiverID, message}) =>{
-   
+socket.on("privateMessage", ({ senderID, receiverID, message }) => {
+  console.log(`Private message from ${senderID} to ${receiverID}: ${message}`);
+  // Look up the receiver's socket ID in the users map
+  const receiverSocketId = users.get(receiverID);
+  if (receiverSocketId) {
+    // Emit the message to the receiver
+    io.to(receiverSocketId).emit("newMessage", {
+      sender: senderID,
+      receiver: receiverID,
+      content: message,
+      timestamp: new Date().toISOString(),
+    });
+    // Optionally, also emit back to the sender to update their UI
+    io.to(socket.id).emit("newMessage", {
+      sender: senderID,
+      receiver: receiverID,
+      content: message,
+      timestamp: new Date().toISOString(),
+    });
+  } else {
+    console.log(`Receiver ${receiverID} is not connected.`);
+  }
+});
+    
+    const receiverSocket = users.get(receiverID);
+    if(receiverSocket){
+      io.to(receiverSocket).emit("newPrivateMessage",{
+        sender: senderID,
+      content: message,
+      //Questionable
+      timestamp: new Date()
+    });
+    }
 
+    socket.emit("privateMessageSent", {
+      receiver: receiverID,
+      content: message,
+      //Questionable
+      timestamp: new Date()
+    })
 
 
   });
@@ -53,5 +89,6 @@ io.on("connection", (socket) => {
     console.log("User disconnected");
   });
 });
+
 
 server.listen(port, () => console.log(`🚀 Server running on port ${port}`));
