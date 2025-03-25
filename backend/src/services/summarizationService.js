@@ -2,6 +2,11 @@ const axios = require("axios");
 const { openaiApiKey } = require("../config/config");
 
 async function generateSummary(messages) {
+
+  if (!messages || messages.length === 0) {
+    return "No messages to summarize.";
+  }
+  
   const conversation = messages.join("\n");
   const sys_prompt = `You are a professional chat summarizer. Your task is to generate a concise, 
                   clear summary of a conversation in bullet points. In your summary, focus on the main topics 

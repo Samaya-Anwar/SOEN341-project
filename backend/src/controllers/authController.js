@@ -1,7 +1,16 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { jwtSecret } = require("../config/config");
+const { OAuth2Client } = require("google-auth-library");
+const { jwtSecret, googleClientId } = require("../config/config");
+
+
+const client = new OAuth2Client(googleClientId);
+
+
+function generateJWT(user) {
+  return jwt.sign({ username: user.username, role: user.role }, jwtSecret, { expiresIn: "7d" });
+}
 
 exports.signup = async (req, res) => {
   try {
@@ -41,5 +50,33 @@ exports.login = async (req, res) => {
     res.json({ token, username: user.username, role: user.role });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
+  }
+};
+
+exports.googleLogin = async (req, res) => {
+  try {
+    const { token: googleToken } = req.body;
+    const ticket = await client.verifyIdToken({
+      idToken: googleToken,
+      audience: googleClientId,
+    });
+    const payload = ticket.getPayload();
+
+    // Use Google email as the username
+    let user = await User.findOne({ username: payload.email });
+    if (!user) {
+      // Create a new user with default role "member"
+      user = new User({
+        username: payload.email,
+        role: "member",
+        password: "", // No password for Google login
+      });
+      await user.save();
+    }
+    const jwtToken = generateJWT(user);
+    res.json({ token: jwtToken, username: user.username, role: user.role });
+  } catch (error) {
+    console.error("Google login error:", error);
+    res.status(500).json({ error: "Google login failed" });
   }
 };
