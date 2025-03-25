@@ -9,7 +9,7 @@ import {
   Button,
 } from '@mui/material';
 
-const API_URL = process.env.REACT_APP_BACKEND_API_URL; // Should be set to http://localhost:3001
+const API_URL = process.env.REACT_APP_BACKEND_API_URL; 
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);

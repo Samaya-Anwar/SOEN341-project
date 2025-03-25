@@ -14,7 +14,14 @@ function App() {
     <Routes>
       <Route path="/" element={<Hero />} />
       <Route path="/login" element={<LoginSignup />} />
-      <Route path="/admin" element={<AdminDashboard />} />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
       <Route
         path="/chat"
         element={
@@ -31,10 +38,17 @@ function App() {
   );
 }
 
-// **Protected Route**
+// ProtectedRoute: only logged-in users can access
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/" />;
+};
+
+// AdminRoute: only logged-in admin users can access
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  return token && role === "admin" ? children : <Navigate to="/" />;
 };
 
 export default App;
