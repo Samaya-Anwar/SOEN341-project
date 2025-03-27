@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { getChannels } from "../api/get/getChannels";
 import { createChannel } from "../api/post/createChannel";
 import { deleteChannel } from "../api/delete/deleteChannel";
-import { getUsers } from "../api/get/getUsers.js";
+import { getPrivateChat } from "../api/get/getPrivateChats.js";
 import { io } from "socket.io-client";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
@@ -46,7 +46,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await getUsers();
+        const response = await getPrivateChat();
         // Filter out current user
         setUsers(response.filter((user) => user.username !== username));
       } catch (error) {
