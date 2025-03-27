@@ -1,7 +1,7 @@
-const PrivateMessage = require("../models/PrivateMessage");
+const PrivateMessage = require("../models/PrivateChat");
 
 // Create a new private message
-exports.createPrivateMessage = async (req, res) => {
+exports.createPrivateChat = async (req, res) => {
   try {
     const { senderID, receiverID, content } = req.body;
     if (!senderID || !receiverID || !content) {
@@ -17,11 +17,11 @@ exports.createPrivateMessage = async (req, res) => {
 };
 
 // Get all private messages for a given user (involving the user as sender or receiver)
-exports.getPrivateMessages = async (req, res) => {
+exports.getPrivateChat = async (req, res) => {
   try {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: "User ID is required" });
-    
+
     const messages = await PrivateMessage.find({
       $or: [{ senderID: userId }, { receiverID: userId }],
     });
@@ -33,7 +33,7 @@ exports.getPrivateMessages = async (req, res) => {
 };
 
 // Delete a private message
-exports.deletePrivateMessage = async (req, res) => {
+exports.deletePrivateChat = async (req, res) => {
   try {
     const { messageId } = req.params;
     await PrivateMessage.deleteOne({ _id: messageId });
@@ -43,19 +43,3 @@ exports.deletePrivateMessage = async (req, res) => {
     res.status(500).json({ error: "Could not delete private message" });
   }
 };
-
-
-const express = require("express");
-const router = express.Router();
-const privateMessageController = require("../controllers/privateMessageController");
-
-// Create a new private message
-router.post("/", privateMessageController.createPrivateMessage);
-
-// Get all private messages for a user
-router.get("/", privateMessageController.getPrivateMessages);
-
-// Delete a private message
-router.delete("/:messageId", privateMessageController.deletePrivateMessage);
-
-module.exports = router;
