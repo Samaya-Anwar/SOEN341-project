@@ -17,12 +17,16 @@ const messageRoutes = require("./src/routes/messageRoutes");
 const channelRoutes = require("./src/routes/channelRoutes");
 const summarizationRoutes = require("./src/routes/summarizationRoutes");
 const privateChatRoutes = require("./src/routes/privateChatRoutes");
+const adminRoutes = require("./src/routes/adminRoutes");
+const userRoutes = require("./src/routes/userRoutes");
 
 app.use("/api", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/channels", channelRoutes);
 app.use("/api/summarization", summarizationRoutes);
 app.use("/api/privateChats", privateChatRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
 // Root route
 app.get("/", (req, res) => {
