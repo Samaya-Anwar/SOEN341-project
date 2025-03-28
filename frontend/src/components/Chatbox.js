@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Avatar,
-  Tooltip,
-} from "@mui/material";
+import { Box, TextField, Button, Typography, Avatar } from "@mui/material";
 import { getMessages } from "../api/get/getMessages";
 import { deleteMessage } from "../api/delete/deleteMessage";
 import { io } from "socket.io-client";
@@ -114,14 +107,11 @@ const Chatbox = ({ selectedChat, chatType }) => {
     if (typingTimeout) clearTimeout(typingTimeout);
 
     if (chatType === "dm") {
-      // For DMs, emit typing to the specific user
       socket.emit("typing", { sender: username, recipient: recipient });
     } else {
-      // For channels
       socket.emit("typing", { sender: username, channel: selectedChat });
     }
 
-    // Set a timeout to prevent too many typing events
     setTypingTimeout(
       setTimeout(() => {
         setTypingTimeout(null);
