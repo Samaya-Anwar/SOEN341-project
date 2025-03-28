@@ -30,9 +30,8 @@ io.on("connection", (socket) => {
     channels.get.apply(channel).add(socket.ID);
     console.log(`User ${socket.ID} joined channel: ${channel}`);
   });
-  socket.on("privateMessage", async ({ senderId, receiverId, content }) => {
+  ocket.on("privateMessage", async ({ senderId, receiverId, content }) => {
     try {
-      // Create a new private message record for all registered users
       const newMessage = new PrivateMessage({
         senderID: senderId,
         receiverID,
@@ -40,31 +39,26 @@ io.on("connection", (socket) => {
       });
       await newMessage.save();
 
-      // If the recipient is online, deliver the message in real time
-      const receiverSocketId = onlineUsers.get(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("newPrivateMessage", {
-          senderId,
-          content,
-          _id: newMessage._id,
-          createdAt: newMessage.createdAt,
-        });
-        console.log(
-          `Private message from ${senderId} to ${receiverId}: ${content}`
-        );
-      } else {
-        console.log(
-          `User ${receiverId} is offline. Private message from ${senderId} saved to DB.`
-        );
-      }
-      // Optionally, acknowledge the sender that the message was processed
+      const users = [senderId, receiverId].sort();
+      const dmRoom = `dm_${users[0]}_${users[1]}`;
+
+      io.to(dmRoom).emit("newMessage", {
+        sender: senderId,
+        recipient: receiverId,
+        content,
+        _id: newMessage._id,
+        createdAt: newMessage.createdAt,
+        type: "dm",
+      });
+      console.log(
+        `Private message from ${senderId} to ${receiverId}: ${content}`
+      );
       socket.emit("privateMessageSent", { message: newMessage });
     } catch (err) {
       console.error("Error sending private message:", err);
       socket.emit("error", { error: "Could not send private message" });
     }
   });
-
   socket.on("deleteMessage", (messageId) => {
     io.emit("messageDeleted", messageId);
   });
