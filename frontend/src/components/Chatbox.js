@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box, TextField, Button, Typography, Avatar } from "@mui/material";
 import { getMessages } from "../api/get/getMessages";
 import { deleteMessage } from "../api/delete/deleteMessage";
+import { getPrivateChat } from "../api/get/getPrivateChats";
 import { io } from "socket.io-client";
 import { sendMessage } from "../api/post/sendMessage";
 import { getChatSummary } from "../api/get/getChatSummary";
@@ -10,7 +11,12 @@ const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 const socket = io(API_URL);
 
-const Chatbox = ({ selectedChat, chatType }) => {
+const Chatbox = ({
+  selectedChat,
+  chatType,
+  onSelectChat,
+  onSelectChatType,
+}) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [summary, setSummary] = useState("");
@@ -22,34 +28,47 @@ const Chatbox = ({ selectedChat, chatType }) => {
   const role = localStorage.getItem("role");
 
   useEffect(() => {
-    if (chatType === "dm" && selectedChat) {
+    setMessages([]);
+    setInput("");
+    setSummary("");
+  }, [selectedChat, chatType]);
+
+  useEffect(() => {
+    if (!selectedChat) return;
+    if (chatType === "dm") {
       setRecipient(selectedChat);
-      const users = [username, selectedChat].sort();
-      const dmRoom = `dm_${users[0]}_${users[1]}`;
+
+      const dmRoom = `dm_${[username, selectedChat.username].sort().join("_")}`;
       socket.emit("joinDM", dmRoom);
-    } else if (chatType === "channel" && selectedChat) {
+    } else if (chatType === "channel") {
       setRecipient(null);
       socket.emit("joinChannel", selectedChat);
     }
   }, [selectedChat, chatType, username]);
-
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
-
       try {
-        let response;
         if (chatType === "dm") {
-          // For DMs, we need to provide both participants
-          const users = [username, selectedChat].sort();
-          const dmRoom = `dm_${users[0]}_${users[1]}`;
-          response = await getMessages(dmRoom, "dm");
+          const allMessages = await getPrivateChat(username);
+          const conversation = allMessages.filter(
+            (msg) =>
+              msg.senderID === selectedChat._id ||
+              msg.receiverID === selectedChat._id
+          );
+          const normalized = conversation.map((msg) => ({
+            sender: msg.senderID,
+            recipient: msg.receiverID,
+            content: msg.content,
+            _id: msg._id,
+            createdAt: msg.createdAt,
+            type: "dm",
+          }));
+          setMessages(Array.isArray(normalized) ? normalized : []);
         } else {
-          // For channels
-          response = await getMessages(selectedChat, "channel");
+          const response = await getMessages(selectedChat, "channel");
+          setMessages(Array.isArray(response) ? response : []);
         }
-
-        setMessages(response);
       } catch (error) {
         console.error(`Error fetching ${chatType} messages:`, error);
       }
@@ -61,21 +80,22 @@ const Chatbox = ({ selectedChat, chatType }) => {
   // Listen for new messages & message deletions
   useEffect(() => {
     const handleNewMessage = (newMessage) => {
-      const isDMForMe =
-        chatType === "dm" &&
-        ((newMessage.sender === recipient &&
-          newMessage.recipient === username) ||
+      if (chatType === "dm") {
+        const recipientId = selectedChat?._id;
+        const isDmMessage =
+          (newMessage.sender === recipientId &&
+            newMessage.recipient === username) ||
           (newMessage.sender === username &&
-            newMessage.recipient === recipient));
-
-      const isChannelMessage =
-        chatType === "channel" && newMessage.channel === selectedChat;
-
-      if (isDMForMe || isChannelMessage) {
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
+            newMessage.recipient === recipientId);
+        if (isDmMessage) {
+          setMessages((prev) => [...prev, newMessage]);
+        }
+      } else if (chatType === "channel") {
+        if (newMessage.channel === selectedChat) {
+          setMessages((prev) => [...prev, newMessage]);
+        }
       }
     };
-
     const handleDeleteMessage = (messageId) => {
       setMessages((prevMessages) =>
         prevMessages.filter((msg) => msg._id !== messageId)
@@ -121,34 +141,27 @@ const Chatbox = ({ selectedChat, chatType }) => {
 
   const onSendMessage = async () => {
     if (!input.trim() || !selectedChat) return;
-
-    let messageData;
-
     if (chatType === "dm") {
-      messageData = {
-        sender: username,
+      const messageData = {
+        senderId: username,
+        receiverId: recipient,
         content: input,
-        recipient: recipient,
-        type: "dm",
       };
+      socket.emit("privateMessage", messageData);
+      setInput("");
     } else {
-      messageData = {
+      const messageData = {
         sender: username,
         content: input,
         channel: selectedChat,
         type: "channel",
       };
-    }
-    if (!username || !selectedChat) {
-      console.error("Missing required message data:", messageData);
-      return;
-    }
-
-    try {
-      await sendMessage(messageData);
-      setInput("");
-    } catch (error) {
-      console.error("Error sending message:", error);
+      try {
+        await sendMessage(messageData);
+        setInput("");
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
     }
   };
   const handleKeyPress = (event) => {
@@ -179,16 +192,14 @@ const Chatbox = ({ selectedChat, chatType }) => {
       setSummary("Could not generate summary.");
     }
   };
+
   const getChatTitle = () => {
     if (!selectedChat) return "Select a chat";
-
-    if (chatType === "dm") {
-      return `Direct message with ${selectedChat}`;
-    } else {
-      return `#${selectedChat}`;
+    if (selectedChat.username) {
+      return `${selectedChat.username}`;
     }
+    return `#${selectedChat}`;
   };
-
   return (
     <Box
       sx={{

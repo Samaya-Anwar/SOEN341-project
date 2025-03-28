@@ -64,13 +64,22 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     const fetchPrivateChats = async () => {
       try {
         const response = await getPrivateChat(userId);
+        const usersResponse = await getUsers();
         const conversationMap = {};
         response.forEach((msg) => {
           const partnerId =
             msg.senderID === userId ? msg.receiverID : msg.senderID;
+          const partnerDetails = usersResponse.find(
+            (user) => user._id === partnerId
+          );
           if (!conversationMap[partnerId]) {
-            conversationMap[partnerId] = { partnerId, messages: [] };
+            conversationMap[partnerId] = {
+              partnerId,
+              username: partnerDetails?.username || "Unknown User",
+              messages: [],
+            };
           }
+
           conversationMap[partnerId].messages.push(msg);
         });
         setPrivateChats(Object.values(conversationMap));
@@ -118,9 +127,15 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const filteredChannels = channels.filter((channel) =>
     (channel.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const filteredDMs = combinedDMs.filter((user) =>
-    (user.username || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDMs = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return combinedDMs.filter((user) => user.conversation);
+    } else {
+      return combinedDMs.filter((user) =>
+        (user.username || "").toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+  }, [combinedDMs, searchQuery]);
 
   const onCreateChannel = async () => {
     const channelName = prompt("Enter new channel name:");
@@ -153,8 +168,8 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     onSelectChat(channelName);
     onSelectChatType("channel");
   };
-  const handleSelectDM = (partnerId) => {
-    onSelectChat(partnerId);
+  const handleSelectDM = (user) => {
+    onSelectChat(user);
     onSelectChatType("dm");
   };
 
@@ -173,7 +188,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     >
       <TextField
         fullWidth
-        placeholder="Search channels and users..."
+        placeholder="Search channels and private chats..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         sx={{ mb: 2, backgroundColor: "white", borderRadius: 1 }}
@@ -181,7 +196,10 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
       <Box>
         <Box sx={{ display: "flex", marginBottom: 2 }}>
           <Button
-            onClick={() => setActiveTab("channels")}
+            onClick={() => {
+              setActiveTab("channels");
+              onSelectChatType("channel");
+            }}
             sx={{
               color: activeTab === "channels" ? "white" : "gray",
               fontWeight: activeTab === "channels" ? "bold" : "normal",
@@ -195,7 +213,10 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
             Channels
           </Button>
           <Button
-            onClick={() => setActiveTab("dms")}
+            onClick={() => {
+              setActiveTab("dms");
+              onSelectChatType("dm");
+            }}
             sx={{
               color: activeTab === "dms" ? "white" : "gray",
               flexGrow: 1,
@@ -266,7 +287,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
                 <ListItem
                   button
                   key={user._id}
-                  onClick={() => handleSelectDM(user._id)}
+                  onClick={() => handleSelectDM(user)}
                   sx={{
                     borderRadius: 1,
                     "&:hover": { backgroundColor: "#40444b" },
