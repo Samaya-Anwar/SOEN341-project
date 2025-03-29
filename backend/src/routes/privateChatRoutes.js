@@ -6,6 +6,6 @@ router.post("/", privateChatController.createPrivateChat);
 
 router.get("/", privateChatController.getPrivateChats);
 
-router.delete("/:messageId", privateChatController.deletePrivateChat);
+router.delete("/:chatId", privateChatController.deletePrivateChat);
 
 module.exports = router;
