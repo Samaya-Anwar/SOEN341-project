@@ -2,7 +2,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const app = require("./app");
 const { port } = require("./src/config/config");
-const PrivateMessage = require("./src/models/PrivateChat");
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -15,56 +14,103 @@ const onlineUsers = new Map();
 app.set("io", io);
 
 io.on("connection", (socket) => {
-  console.log("A user connected");
+  console.log("A user connected:", socket.id);
+
   socket.on("userConnected", (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.userId = userId; // Save on socket for cleanup on disconnect
     console.log(`User ${userId} is online with socket id: ${socket.id}`);
   });
-  //updated the joinchannel socket
+
   socket.on("joinChannel", (channel) => {
     socket.join(channel);
     if (!channels.has(channel)) {
       channels.set(channel, new Set());
     }
-    channels.get.apply(channel).add(socket.ID);
-    console.log(`User ${socket.ID} joined channel: ${channel}`);
+    channels.get(channel).add(socket.id);
+    console.log(`User ${socket.id} joined channel: ${channel}`);
   });
-  ocket.on("privateMessage", async ({ senderId, receiverId, content }) => {
+
+  socket.on("joinDM", (dmData) => {
+    if (!dmData || !dmData.users || !Array.isArray(dmData.users)) {
+      console.error("Invalid DM room data:", dmData);
+      return;
+    }
+
+    const users = dmData.users;
+    const dmRoom = `dm_${users.sort().join("_")}`;
+    socket.join(dmRoom);
+    console.log(`User ${socket.id} joined DM Room: ${dmRoom}`);
+  });
+
+  // Direct message handling with database persistence
+  socket.on("sendDirectMessage", async (messageData) => {
+    if (
+      !messageData.senderId ||
+      !messageData.receiverId ||
+      !messageData.content
+    ) {
+      console.error("Invalid direct message data", messageData);
+      return;
+    }
+
     try {
+      // Save the message to the database
       const newMessage = new PrivateMessage({
-        senderID: senderId,
-        receiverID,
-        content,
+        senderId: messageData.senderId,
+        receiverId: messageData.receiverId,
+        content: messageData.content,
+        sender: messageData.sender || messageData.senderId,
+        timestamp: messageData.timestamp || new Date(),
       });
-      await newMessage.save();
 
-      const users = [senderId, receiverId].sort();
-      const dmRoom = `dm_${users[0]}_${users[1]}`;
+      const savedMessage = await newMessage.save();
+      console.log("Message saved to database:", savedMessage);
 
-      io.to(dmRoom).emit("newMessage", {
-        sender: senderId,
-        recipient: receiverId,
-        content,
-        _id: newMessage._id,
-        createdAt: newMessage.createdAt,
-        type: "dm",
-      });
-      console.log(
-        `Private message from ${senderId} to ${receiverId}: ${content}`
-      );
-      socket.emit("privateMessageSent", { message: newMessage });
-    } catch (err) {
-      console.error("Error sending private message:", err);
-      socket.emit("error", { error: "Could not send private message" });
+      // Use the saved message with database ID
+      messageData = savedMessage;
+
+      // Continue with broadcasting...
+    } catch (error) {
+      console.error("Error saving direct message:", error);
     }
   });
+
   socket.on("deleteMessage", (messageId) => {
     io.emit("messageDeleted", messageId);
   });
 
+  socket.on("typing", (data) => {
+    console.log("Typing indication:", data);
+
+    if (data.recipient) {
+      // DM typing
+      const recipientSocketId = onlineUsers.get(data.recipient);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("userTyping", data);
+      }
+    } else if (data.channel) {
+      // Channel typing
+      io.to(data.channel).emit("userTyping", data);
+    }
+  });
+
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+    console.log("User disconnected:", socket.id);
+
+    // Remove from online users
+    if (socket.userId) {
+      onlineUsers.delete(socket.userId);
+      console.log(`User ${socket.userId} is now offline`);
+    }
+
+    // Remove from all channels
+    channels.forEach((users, channel) => {
+      if (users.has(socket.id)) {
+        users.delete(socket.id);
+        console.log(`Removed user ${socket.id} from channel ${channel}`);
+      }
+    });
   });
 });
 
