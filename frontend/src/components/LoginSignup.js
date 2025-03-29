@@ -26,37 +26,20 @@ const LoginSignup = () => {
           username: loginData.username,
           password: loginData.password,
         });
-
-        if (!response || !response.data) {
-          alert("Login failed. Please check your credentials.");
-          return;
-        }
-
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("username", response.data.username);
-        localStorage.setItem("userId", response.data.userId);
         localStorage.setItem("role", response.data.role);
         alert(`Login successful! Your role is ${response.data.role}`);
         navigate("/chat");
       } else {
+        // Handle signup; role is defaulted on the backend to "member"
         console.log("Signup Data Before Sending:", loginData);
         const signupResponse = await signUpUser(loginData);
-
-        if (!signupResponse || !signupResponse.data) {
-          alert("Signup failed. That username might already be taken.");
-          return;
-        }
-
-        if (signupResponse.data.userId) {
-          localStorage.setItem("userId", signupResponse.data.userId);
-        }
-
         alert(`Signup successful! Your role is ${signupResponse.data.role}`);
         setIsLogin(true);
       }
     } catch (error) {
-      console.error("Authentication error:", error);
-      alert("Something went wrong. Please try again.");
+      alert("Something went wrong");
     }
   };
 
@@ -81,9 +64,7 @@ const LoginSignup = () => {
         localStorage.setItem("token", googleResponse.data.token);
         localStorage.setItem("username", googleResponse.data.username);
         localStorage.setItem("role", googleResponse.data.role);
-        alert(
-          `Google Login successful! Your role is ${googleResponse.data.role}`
-        );
+        alert(`Google Login successful! Your role is ${googleResponse.data.role}`);
         navigate("/chat");
       } else {
         alert("Unexpected response from server. Please try again.");
@@ -101,18 +82,13 @@ const LoginSignup = () => {
           <img alt="ChatApp" src="./logo.png" className="mx-auto h-18 w-auto" />
         </a>
         <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-          {isLogin
-            ? "Log in to continue chatting."
-            : "Create an account to start chatting."}
+          {isLogin ? "Log in to continue chatting." : "Create an account to start chatting."}
         </h2>
       </div>
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-900"
-            >
+            <label htmlFor="username" className="block text-sm font-medium text-gray-900">
               Username
             </label>
             <div className="mt-2">
@@ -123,18 +99,13 @@ const LoginSignup = () => {
                 required
                 placeholder="Username"
                 value={loginData.username}
-                onChange={(e) =>
-                  setLoginData({ ...loginData, username: e.target.value })
-                }
+                onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
               />
             </div>
           </div>
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-900"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-900">
               Password
             </label>
             <div className="mt-2">
@@ -145,9 +116,7 @@ const LoginSignup = () => {
                 required
                 placeholder="Password"
                 value={loginData.password}
-                onChange={(e) =>
-                  setLoginData({ ...loginData, password: e.target.value })
-                }
+                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
               />
             </div>
@@ -170,10 +139,7 @@ const LoginSignup = () => {
             </button>
             <p className="mt-10 text-center text-sm text-gray-500">
               {isLogin ? "Not a member?" : "Already a member?"}{" "}
-              <a
-                onClick={toggleForm}
-                className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
-              >
+              <a onClick={toggleForm} className="text-indigo-600 hover:text-indigo-500 cursor-pointer">
                 {isLogin ? "Sign up" : "Log in"}
               </a>
             </p>

@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
+
 const privateChatSchema = new mongoose.Schema(
   {
-    senderId: {
+    senderID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    receiverId: {
+    receiverID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -15,4 +16,5 @@ const privateChatSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
 module.exports = mongoose.model("PrivateMessage", privateChatSchema);
