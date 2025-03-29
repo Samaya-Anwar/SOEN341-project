@@ -10,7 +10,7 @@ exports.sendMessage = async (req, res) => {
     await newMessage.save();
 
     const io = req.app.get("io");
-    io.to(channel).emit("newMessage", newMessage); // Emit to correct channel
+    io.to(channel).emit("newMessage", newMessage);
     res.status(201).json(newMessage);
   } catch (err) {
     console.error("Error sending message:", err);
@@ -24,7 +24,7 @@ exports.deleteMessage = async (req, res) => {
     await Message.findByIdAndDelete(id);
 
     const io = req.app.get("io");
-    io.emit("messageDeleted", id); // Notify all clients to remove message
+    io.emit("messageDeleted", id);
     res.json({ message: "Message deleted" });
   } catch (err) {
     res.status(500).json({ error: "Could not delete message" });
