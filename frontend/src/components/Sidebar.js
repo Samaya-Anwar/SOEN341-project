@@ -8,14 +8,17 @@ import {
   TextField,
   Button,
   Divider,
+  Avatar,
 } from "@mui/material";
 import { io } from "socket.io-client";
 import { createChannel } from "../api/post/createChannel";
 import { getChannels } from "../api/get/getChannels";
 import { deleteChannel } from "../api/delete/deleteChannel";
+import { createPrivateChat } from "../api/post/createPrivateChat";
 import { getPrivateChat } from "../api/get/getPrivateChats";
+import { deletePrivateChat } from "../api/delete/deletePrivateChat";
 import { useNavigate } from "react-router-dom";
-import { getUsers } from "../api/get/getUsers";
+import { getAllUsers } from "../api/get/getUsers";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const socket = io(`${API_URL}`);
@@ -31,6 +34,18 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await getAllUsers();
+        setUsers(response);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+  useEffect(() => {
     const fetchChannels = async () => {
       try {
         const response = await getChannels();
@@ -44,45 +59,14 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
 
     socket.on("channelUpdated", fetchChannels);
 
-    return () => socket.off("channelUpdated");
-  }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await getUsers();
-        setUsers(response);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
-    fetchUsers();
+    return () => socket.off("channelUpdated", fetchChannels);
   }, []);
 
   useEffect(() => {
     const fetchPrivateChats = async () => {
       try {
-        const response = await getPrivateChat(userId);
-        const usersResponse = await getUsers();
-        const conversationMap = {};
-        response.forEach((msg) => {
-          const partnerId =
-            msg.senderID === userId ? msg.receiverID : msg.senderID;
-          const partnerDetails = usersResponse.find(
-            (user) => user._id === partnerId
-          );
-          if (!conversationMap[partnerId]) {
-            conversationMap[partnerId] = {
-              partnerId,
-              username: partnerDetails?.username || "Unknown User",
-              messages: [],
-            };
-          }
-
-          conversationMap[partnerId].messages.push(msg);
-        });
-        setPrivateChats(Object.values(conversationMap));
+        const response = await getPrivateChat();
+        setPrivateChats(response);
       } catch (error) {
         console.error("Error fetching private chats:", error);
       }
@@ -91,7 +75,10 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     if (userId) {
       fetchPrivateChats();
     }
+    socket.on("privateChatUpdated", fetchPrivateChats);
+    return () => socket.off("privateChatUpdated", fetchPrivateChats);
   }, [userId]);
+
   useEffect(() => {
     const handleNewPrivateMessage = (message) => {
       setPrivateChats((prevChats) => {
@@ -113,29 +100,57 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     socket.on("newPrivateMessage", handleNewPrivateMessage);
     return () => socket.off("newPrivateMessage", handleNewPrivateMessage);
   }, [userId]);
-  const combinedDMs = useMemo(() => {
-    return users
-      .filter((user) => user._id !== userId)
-      .map((user) => {
-        const conversation = privateChats.find(
-          (chat) => chat.partnerId === user._id
-        );
-        return { ...user, conversation };
-      });
-  }, [users, privateChats, userId]);
+
+  const combinedChats = useMemo(() => {
+    return privateChats.map((chat) => {
+      const partnerId = chat.participants.find((p) => p.toString() !== userId);
+      const partner = users.find((u) => u._id === partnerId);
+      return {
+        chatId: chat._id,
+        partnerId,
+        username: partner ? partner.username : "Unknown",
+
+        messages: chat.messages || [],
+      };
+    });
+  }, [privateChats, users, userId]);
 
   const filteredChannels = channels.filter((channel) =>
     (channel.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const filteredDMs = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return combinedDMs.filter((user) => user.conversation);
-    } else {
-      return combinedDMs.filter((user) =>
-        (user.username || "").toLowerCase().includes(searchQuery.toLowerCase())
-      );
+
+  const filteredPrivateChats = useMemo(() => {
+    return combinedChats.filter((chat) =>
+      chat.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [combinedChats, searchQuery]);
+
+  const onCreatePrivateChat = async (partner) => {
+    const exists = combinedChats.find((chat) => chat.partnerId === partner._id);
+    if (exists) {
+      onSelectChat({ ...partner, chatId: exists.chatId });
+      onSelectChatType("privateChat");
+      return;
     }
-  }, [combinedDMs, searchQuery]);
+    try {
+      const response = await createPrivateChat({
+        participants: [userId, partner._id],
+      });
+      socket.emit("privateChatUpdated");
+      onSelectChat({ ...partner, chatId: response.data._id });
+      onSelectChatType("privateChat");
+    } catch (error) {
+      console.error("Error starting new private chat:", error);
+    }
+  };
+  const onDeletePrivateChat = async (chatId) => {
+    try {
+      await deletePrivateChat(chatId);
+      socket.emit("privateChatUpdated");
+    } catch (error) {
+      console.error("Error deleting private chat:", error);
+    }
+  };
 
   const onCreateChannel = async () => {
     const channelName = prompt("Enter new channel name:");
@@ -143,7 +158,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
 
     try {
       await createChannel(channelName);
-      socket.emit("channelUpdated"); // Notify users about new channel
+      socket.emit("channelUpdated");
     } catch (error) {
       console.error("Error creating channel:", error);
     }
@@ -152,7 +167,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const onDeleteChannel = async (channel) => {
     try {
       await deleteChannel(channel);
-      socket.emit("channelUpdated"); // Notify users about channel deletion
+      socket.emit("channelUpdated");
     } catch (error) {
       console.error("Error deleting channel:", error);
     }
@@ -168,9 +183,9 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     onSelectChat(channelName);
     onSelectChatType("channel");
   };
-  const handleSelectDM = (user) => {
-    onSelectChat(user);
-    onSelectChatType("dm");
+  const handleSelectPrivateChat = (chat) => {
+    onSelectChat(chat);
+    onSelectChatType("privateChat");
   };
 
   return (
@@ -209,20 +224,19 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
               flexGrow: 1,
             }}
           >
-            {" "}
             Channels
           </Button>
           <Button
             onClick={() => {
-              setActiveTab("dms");
-              onSelectChatType("dm");
+              setActiveTab("privateChats");
+              onSelectChatType("privateChat");
             }}
             sx={{
-              color: activeTab === "dms" ? "white" : "gray",
+              color: activeTab === "privateChats" ? "white" : "gray",
               flexGrow: 1,
             }}
           >
-            Direct Messages
+            Private Chats
           </Button>
         </Box>
         {activeTab === "channels" && (
@@ -238,7 +252,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
               {role === "admin" && (
                 <Button
                   onClick={onCreateChannel}
-                  sx={{ color: "lightblue", marginBottom: 1 }}
+                  sx={{ color: "lightblue", mb: 1 }}
                 >
                   + Add Channel
                 </Button>
@@ -259,7 +273,10 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
                   {role === "admin" && (
                     <Button
                       color="error"
-                      onClick={() => onDeleteChannel(channel.name)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteChannel(channel.name);
+                      }}
                       size="small"
                     >
                       Delete
@@ -267,7 +284,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
                   )}
                 </ListItem>
               ))}
-              {channels.length === 0 && (
+              {filteredChannels.length === 0 && (
                 <Typography
                   variant="body2"
                   color="gray"
@@ -279,48 +296,76 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
             </List>
           </>
         )}
-        {activeTab === "dms" && (
+        {activeTab === "privateChats" && (
           <>
-            <Typography variant="h6">Direct Messages</Typography>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="h6">Private Chats</Typography>
+              <Button
+                onClick={() => {
+                  // Prompt for a username to start a new chat
+                  const usernameToChat = prompt(
+                    "Enter username to start chat with:"
+                  );
+                  if (!usernameToChat) return;
+                  const partner = users.find(
+                    (u) =>
+                      u.username.toLowerCase() === usernameToChat.toLowerCase()
+                  );
+                  if (partner) {
+                    onCreatePrivateChat(partner);
+                  } else {
+                    alert("User not found.");
+                  }
+                }}
+                sx={{ color: "lightblue" }}
+              >
+                + New Chat
+              </Button>
+            </Box>
             <List>
-              {filteredDMs.map((user) => (
+              {filteredPrivateChats.map((chat) => (
                 <ListItem
                   button
-                  key={user._id}
-                  onClick={() => handleSelectDM(user)}
+                  key={chat.partnerId}
+                  onClick={() => handleSelectPrivateChat(chat)}
                   sx={{
                     borderRadius: 1,
                     "&:hover": { backgroundColor: "#40444b" },
                   }}
                 >
                   <ListItemText
-                    primary={user.username}
+                    primary={chat.username}
                     secondary={
-                      <>
-                        <span>
-                          {user.conversation &&
-                          user.conversation.messages.length > 0
-                            ? user.conversation.messages[
-                                user.conversation.messages.length - 1
-                              ].content
-                            : "New Conversation"}
-                        </span>
-                        {" - "}
-                        <span style={{ fontSize: "0.8em", color: "gray" }}>
-                          {user.status || "offline"}
-                        </span>
-                      </>
+                      chat.messages && chat.messages.length > 0
+                        ? chat.messages[chat.messages.length - 1].content
+                        : "New Conversation"
                     }
                   />
+                  <Button
+                    color="error"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeletePrivateChat(chat.chatId);
+                    }}
+                    size="small"
+                  >
+                    Delete
+                  </Button>
                 </ListItem>
               ))}
-              {filteredDMs.length === 0 && (
+              {filteredPrivateChats.length === 0 && (
                 <Typography
                   variant="body2"
                   color="gray"
                   sx={{ textAlign: "center", my: 2 }}
                 >
-                  No direct messages found
+                  No private chats found
                 </Typography>
               )}
             </List>
@@ -329,18 +374,11 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
       </Box>
       <Divider sx={{ backgroundColor: "gray", my: 2 }} />
 
-      {/* User Info & Logout */}
       <Box>
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Box
-            sx={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              backgroundColor: "green",
-              marginRight: 2,
-            }}
-          />
+          <Avatar sx={{ width: 32, height: 32, mr: 2 }}>
+            {userId ? userId.charAt(0).toUpperCase() : "A"}
+          </Avatar>
           <Typography>{userId || "Anonymous"}</Typography>
         </Box>
         <Button

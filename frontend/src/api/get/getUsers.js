@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiUrl = process.env.REACT_APP_BACKEND_API_URL;
-const getUsers = async () => {
+const getAllUsers = async () => {
   try {
     const response = await axios.get(`${apiUrl}/api/users/`);
     return response.data;
@@ -10,4 +10,4 @@ const getUsers = async () => {
   }
 };
 
-export { getUsers };
+export { getAllUsers };
