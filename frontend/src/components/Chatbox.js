@@ -112,6 +112,8 @@ const Chatbox = ({ selectedChat, chatType }) => {
         type: "channel",
       };
     }
+    setMessages((prev) => [...prev, { ...messageData, _id: Date.now() }]);
+
     try {
       await sendMessage(messageData);
       setInput("");
