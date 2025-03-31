@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Box, TextField, Button, Typography, Avatar } from "@mui/material";
+import { io } from "socket.io-client";
 import { getMessages } from "../api/get/getMessages";
 import { deleteMessage } from "../api/delete/deleteMessage";
-import { io } from "socket.io-client";
 import { sendMessage } from "../api/post/sendMessage";
 import { getChatSummary } from "../api/get/getChatSummary";
 
@@ -139,9 +138,9 @@ const Chatbox = ({ selectedChat, chatType }) => {
       console.error("Error deleting message:", error);
     }
   };
+
   const onSummarize = async () => {
     if (!selectedChat) return;
-
     try {
       const data = await getChatSummary(selectedChat);
       setSummary(data.summary || "No summary available.");
@@ -158,136 +157,103 @@ const Chatbox = ({ selectedChat, chatType }) => {
     }
     return `#${selectedChat}`;
   };
+
   return (
-    <Box
-      sx={{
-        width: "75%",
-        height: "100vh",
-        backgroundColor: "#36393f",
-        color: "white",
-        padding: 2,
-      }}
-    >
-      <Typography variant="h6" sx={{ marginBottom: 2 }}>
-        {getChatTitle()}
-      </Typography>
-      <Box
-        sx={{
-          height: "80%",
-          overflowY: "auto",
-          backgroundColor: "#2f3136",
-          padding: 2,
-          borderRadius: 1,
-        }}
-      >
+    <div className="flex flex-col w-3/4 h-screen bg-gray-100 text-gray-900 p-4">
+      {/* Chat Title */}
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold text-center">{getChatTitle()}</h2>
+      </div>
+
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto bg-white p-4 rounded-lg shadow">
         {messages.map((msg, index) => (
-          <Box
+          <div
             key={index}
-            sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              marginBottom: 1,
-              padding: 1,
-              borderRadius: 1,
-              backgroundColor: msg.sender === username ? "#40444b" : "#2f3136",
-            }}
+            className={`flex items-start justify-between mb-2 p-2 rounded ${
+              msg.sender === username ? "bg-blue-100" : "bg-gray-200"
+            }`}
           >
-            <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-              <Avatar
-                sx={{
-                  width: 32,
-                  height: 32,
-                  marginRight: 1,
-                  bgcolor: msg.sender === username ? "#5865f2" : "#ed4245",
-                }}
+            <div className="flex items-start">
+              {/* Avatar */}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                  msg.sender === username ? "bg-blue-500" : "bg-red-500"
+                }`}
               >
-                {msg.sender.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="subtitle2" color="lightgrey">
+                <span className="text-white font-bold">
+                  {msg.sender.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">
                   {msg.sender}{" "}
                   {msg.timestamp &&
                     new Date(msg.timestamp).toLocaleTimeString()}
-                </Typography>
-                <Typography>{msg.content}</Typography>
-              </Box>
-            </Box>
+                </p>
+                <p className="text-gray-700">{msg.content}</p>
+              </div>
+            </div>
             {role === "admin" && (
-              <Button
+              <button
                 onClick={() => onDeleteMessage(msg._id)}
-                sx={{ color: "red" }}
-                size="small"
+                className="text-red-500 text-sm"
               >
                 Delete
-              </Button>
+              </button>
             )}
-          </Box>
+          </div>
         ))}
         {typing && (
-          <Typography variant="body2" color="lightgrey" fontStyle="italic">
-            {chatType === "privateChat" ? "Someone" : "Someone"} is typing...
-          </Typography>
+          <p className="text-sm italic text-gray-600">Someone is typing...</p>
         )}
-      </Box>
+      </div>
 
-      <Box sx={{ marginBottom: 2 }}>
-        <Button
-          variant="contained"
-          color="secondary"
+      {/* Summary Section */}
+      <div className="mt-4">
+        <button
           onClick={onSummarize}
-          sx={{ marginRight: 2 }}
+          className="mb-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500"
         >
           Summarize
-        </Button>
+        </button>
         {summary && (
-          <Box
-            sx={{
-              marginTop: 2,
-              backgroundColor: "#2f3136",
-              padding: 2,
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="body1">{summary}</Typography>
-            <Button
-              variant="outlined"
-              color="inherit"
+          <div className="mt-2 bg-white p-4 rounded shadow">
+            <p className="text-gray-800">{summary}</p>
+            <button
               onClick={() => setSummary("")}
-              sx={{ marginTop: 1 }}
+              className="mt-2 px-3 py-1 border border-gray-300 rounded text-gray-800 hover:bg-gray-100"
             >
               Close
-            </Button>
-          </Box>
+            </button>
+          </div>
         )}
-      </Box>
+      </div>
 
-      <Box sx={{ display: "flex", marginTop: 2 }}>
-        <TextField
-          variant="outlined"
-          fullWidth
+      {/* Input Area */}
+      <div className="flex mt-4">
+        <input
+          type="text"
           placeholder={`Message ${
             chatType === "privateChat"
               ? selectedChat.username
               : "#" + selectedChat
           }...`}
-          sx={{ backgroundColor: "white", borderRadius: 1 }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}
           disabled={!selectedChat}
+          className="flex-1 p-2 border border-gray-300 rounded bg-white text-gray-900 focus:outline-none"
         />
-        <Button
-          variant="contained"
-          color="primary"
+        <button
           onClick={onSendMessage}
-          sx={{ marginLeft: 1 }}
           disabled={!input.trim() || !selectedChat}
+          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
         >
           Send
-        </Button>
-      </Box>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 };
 
