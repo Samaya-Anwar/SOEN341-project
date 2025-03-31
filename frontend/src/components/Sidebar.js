@@ -1,15 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-  TextField,
-  Button,
-  Divider,
-  Avatar,
-} from "@mui/material";
 import { io } from "socket.io-client";
 import { createChannel } from "../api/post/createChannel";
 import { getChannels } from "../api/get/getChannels";
@@ -33,6 +22,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const userId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
+  // Fetch all users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -42,9 +32,10 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
         console.error("Error fetching users:", error);
       }
     };
-
     fetchUsers();
   }, []);
+
+  // Fetch channels
   useEffect(() => {
     const fetchChannels = async () => {
       try {
@@ -56,12 +47,11 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     };
 
     fetchChannels();
-
     socket.on("channelUpdated", fetchChannels);
-
     return () => socket.off("channelUpdated", fetchChannels);
   }, []);
 
+  // Fetch private chats
   useEffect(() => {
     const fetchPrivateChats = async () => {
       try {
@@ -79,6 +69,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     return () => socket.off("privateChatUpdated", fetchPrivateChats);
   }, [userId]);
 
+  // Handle incoming private messages
   useEffect(() => {
     const handleNewPrivateMessage = (message) => {
       setPrivateChats((prevChats) => {
@@ -101,6 +92,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     return () => socket.off("newPrivateMessage", handleNewPrivateMessage);
   }, [userId]);
 
+  // Combine private chats with user data
   const combinedChats = useMemo(() => {
     return privateChats.map((chat) => {
       const partnerId = chat.participants.find((p) => p.toString() !== userId);
@@ -109,7 +101,6 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
         chatId: chat._id,
         partnerId,
         username: partner ? partner.username : "Unknown",
-
         messages: chat.messages || [],
       };
     });
@@ -143,6 +134,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
       console.error("Error starting new private chat:", error);
     }
   };
+
   const onDeletePrivateChat = async (chatId) => {
     try {
       await deletePrivateChat(chatId);
@@ -155,7 +147,6 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const onCreateChannel = async () => {
     const channelName = prompt("Enter new channel name:");
     if (!channelName) return;
-
     try {
       await createChannel(channelName);
       socket.emit("channelUpdated");
@@ -164,151 +155,121 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     }
   };
 
-  const onDeleteChannel = async (channel) => {
+  const onDeleteChannel = async (channelName) => {
     try {
-      await deleteChannel(channel);
+      await deleteChannel(channelName);
       socket.emit("channelUpdated");
     } catch (error) {
       console.error("Error deleting channel:", error);
     }
   };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("role");
-
     navigate("/login");
   };
+
   const handleSelectChannel = (channelName) => {
     onSelectChat(channelName);
     onSelectChatType("channel");
   };
+
   const handleSelectPrivateChat = (chat) => {
     onSelectChat(chat);
     onSelectChatType("privateChat");
   };
 
   return (
-    <Box
-      sx={{
-        width: "25%",
-        height: "100vh",
-        backgroundColor: "#2f3136",
-        color: "white",
-        padding: 2,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-    >
-      <TextField
-        fullWidth
+    <div className="w-1/4 h-screen bg-gray-100 text-gray-900 p-4 flex flex-col justify-between">
+      {/* Search Input */}
+      <input
+        type="text"
         placeholder="Search channels and private chats..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        sx={{ mb: 2, backgroundColor: "white", borderRadius: 1 }}
+        className="w-full p-2 mb-4 border rounded bg-white"
       />
-      <Box>
-        <Box sx={{ display: "flex", marginBottom: 2 }}>
-          <Button
+
+      <div>
+        {/* Tabs */}
+        <div className="flex mb-4">
+          <button
             onClick={() => {
               setActiveTab("channels");
               onSelectChatType("channel");
             }}
-            sx={{
-              color: activeTab === "channels" ? "white" : "gray",
-              fontWeight: activeTab === "channels" ? "bold" : "normal",
-              borderBottom:
-                activeTab === "channels" ? "2px solid white" : "none",
-              borderRadius: 0,
-              flexGrow: 1,
-            }}
+            className={`flex-1 py-2 ${
+              activeTab === "channels"
+                ? "text-gray-900 font-bold border-b-2 border-gray-900"
+                : "text-gray-500"
+            }`}
           >
             Channels
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={() => {
               setActiveTab("privateChats");
               onSelectChatType("privateChat");
             }}
-            sx={{
-              color: activeTab === "privateChats" ? "white" : "gray",
-              flexGrow: 1,
-            }}
+            className={`flex-1 py-2 ${
+              activeTab === "privateChats"
+                ? "text-gray-900 font-bold border-b-2 border-gray-900"
+                : "text-gray-500"
+            }`}
           >
             Private Chats
-          </Button>
-        </Box>
+          </button>
+        </div>
+
         {activeTab === "channels" && (
-          <>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h6">Channels</Typography>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold">Channels</h3>
               {role === "admin" && (
-                <Button
-                  onClick={onCreateChannel}
-                  sx={{ color: "lightblue", mb: 1 }}
-                >
+                <button onClick={onCreateChannel} className="text-blue-500">
                   + Add Channel
-                </Button>
+                </button>
               )}
-            </Box>
-            <List>
-              {filteredChannels.map((channel) => (
-                <ListItem
-                  button
-                  key={channel.name}
-                  onClick={() => handleSelectChannel(channel.name)}
-                  sx={{
-                    borderRadius: "4px",
-                    "&:hover": { backgroundColor: "#40444b" },
-                  }}
-                >
-                  <ListItemText primary={channel.name} />
-                  {role === "admin" && (
-                    <Button
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteChannel(channel.name);
-                      }}
-                      size="small"
-                    >
-                      Delete
-                    </Button>
-                  )}
-                </ListItem>
-              ))}
-              {filteredChannels.length === 0 && (
-                <Typography
-                  variant="body2"
-                  color="gray"
-                  sx={{ textAlign: "center", my: 2 }}
-                >
+            </div>
+            <ul>
+              {filteredChannels.length > 0 ? (
+                filteredChannels.map((channel) => (
+                  <li
+                    key={channel.name}
+                    onClick={() => handleSelectChannel(channel.name)}
+                    className="p-2 rounded hover:bg-gray-200 cursor-pointer flex justify-between items-center mb-1"
+                  >
+                    <span>{channel.name}</span>
+                    {role === "admin" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteChannel(channel.name);
+                        }}
+                        className="text-red-500 text-sm"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </li>
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-500 my-2">
                   No channels available
-                </Typography>
+                </p>
               )}
-            </List>
-          </>
+            </ul>
+          </div>
         )}
+
         {activeTab === "privateChats" && (
-          <>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h6">Private Chats</Typography>
-              <Button
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold">Private Chats</h3>
+              <button
                 onClick={() => {
-                  // Prompt for a username to start a new chat
                   const usernameToChat = prompt(
                     "Enter username to start chat with:"
                   );
@@ -323,77 +284,68 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
                     alert("User not found.");
                   }
                 }}
-                sx={{ color: "lightblue" }}
+                className="text-blue-500"
               >
                 + New Chat
-              </Button>
-            </Box>
-            <List>
-              {filteredPrivateChats.map((chat) => (
-                <ListItem
-                  button
-                  key={chat.partnerId}
-                  onClick={() => handleSelectPrivateChat(chat)}
-                  sx={{
-                    borderRadius: 1,
-                    "&:hover": { backgroundColor: "#40444b" },
-                  }}
-                >
-                  <ListItemText
-                    primary={chat.username}
-                    secondary={
-                      chat.messages && chat.messages.length > 0
-                        ? chat.messages[chat.messages.length - 1].content
-                        : "New Conversation"
-                    }
-                  />
-                  <Button
-                    color="error"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeletePrivateChat(chat.chatId);
-                    }}
-                    size="small"
+              </button>
+            </div>
+            <ul>
+              {filteredPrivateChats.length > 0 ? (
+                filteredPrivateChats.map((chat) => (
+                  <li
+                    key={chat.partnerId}
+                    onClick={() => handleSelectPrivateChat(chat)}
+                    className="p-2 rounded hover:bg-gray-200 cursor-pointer flex justify-between items-center mb-1"
                   >
-                    Delete
-                  </Button>
-                </ListItem>
-              ))}
-              {filteredPrivateChats.length === 0 && (
-                <Typography
-                  variant="body2"
-                  color="gray"
-                  sx={{ textAlign: "center", my: 2 }}
-                >
+                    <div>
+                      <p className="font-semibold">{chat.username}</p>
+                      <p className="text-sm text-gray-600">
+                        {chat.messages && chat.messages.length > 0
+                          ? chat.messages[chat.messages.length - 1].content
+                          : "New Conversation"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeletePrivateChat(chat.chatId);
+                      }}
+                      className="text-red-500 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-500 my-2">
                   No private chats found
-                </Typography>
+                </p>
               )}
-            </List>
-          </>
+            </ul>
+          </div>
         )}
-      </Box>
-      <Divider sx={{ backgroundColor: "gray", my: 2 }} />
+      </div>
 
-      <Box>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Avatar sx={{ width: 32, height: 32, mr: 2 }}>
-            {userId ? userId.charAt(0).toUpperCase() : "A"}
-          </Avatar>
-          <Typography>{userId || "Anonymous"}</Typography>
-        </Box>
-        <Button
+      <hr className="my-4 border-gray-300" />
+
+      {/* User Info and Logout */}
+      <div>
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center mr-2">
+            <span className="text-white">
+              {userId ? userId.charAt(0).toUpperCase() : "A"}
+            </span>
+          </div>
+          <span>{userId || "Anonymous"}</span>
+        </div>
+        <button
           onClick={handleLogout}
-          sx={{
-            color: "white",
-            backgroundColor: "red",
-            "&:hover": { backgroundColor: "darkred" },
-            width: "100%",
-          }}
+          className="w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
         >
           Logout
-        </Button>
-      </Box>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 };
 
