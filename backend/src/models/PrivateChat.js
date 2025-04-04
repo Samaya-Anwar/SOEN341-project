@@ -3,13 +3,7 @@ const mongoose = require("mongoose");
 const privateChatSchema = new mongoose.Schema(
   {
     participants: {
-      type: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-      ],
+      type: [String],
       validate: {
         validator: function (v) {
           return v.length === 2;

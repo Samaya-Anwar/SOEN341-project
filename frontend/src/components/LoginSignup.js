@@ -153,12 +153,12 @@ const LoginSignup = () => {
             </button>
             <p className="mt-10 text-center text-sm text-gray-500">
               {isLogin ? "Not a member?" : "Already a member?"}{" "}
-              <a
+              <button
                 onClick={toggleForm}
-                className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
+                className="text-indigo-600 hover:text-indigo-500 cursor-pointer bg-transparent border-none p-0"
               >
                 {isLogin ? "Sign up" : "Log in"}
-              </a>
+              </button>
             </p>
           </div>
         </form>

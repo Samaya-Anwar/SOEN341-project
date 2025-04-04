@@ -1,4 +1,5 @@
-const PrivateMessage = require("../models/PrivateChat");
+const PrivateChat = require("../models/PrivateChat");
+const User = require("../models/User");
 
 exports.createPrivateChat = async (req, res) => {
   try {
@@ -12,6 +13,7 @@ exports.createPrivateChat = async (req, res) => {
     const existingChat = await PrivateChat.findOne({
       participants: { $all: participants, $size: 2 },
     });
+
     if (existingChat) {
       return res.status(400).json({
         error: "A private chat between these participants already exists",
@@ -30,10 +32,10 @@ exports.createPrivateChat = async (req, res) => {
 
 exports.getPrivateChats = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { username } = req.query;
     let chats;
-    if (userId) {
-      chats = await PrivateChat.find({ participants: userId });
+    if (username) {
+      chats = await PrivateChat.find({ participants: username });
     } else {
       chats = await PrivateChat.find();
     }

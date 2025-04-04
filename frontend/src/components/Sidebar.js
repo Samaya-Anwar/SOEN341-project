@@ -16,26 +16,11 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const [channels, setChannels] = useState([]);
   const [privateChats, setPrivateChats] = useState([]);
   const [activeTab, setActiveTab] = useState("channels");
-  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const role = localStorage.getItem("role");
-  const userId = localStorage.getItem("userId");
+  const username = localStorage.getItem("username");
   const navigate = useNavigate();
 
-  // Fetch all users
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await getAllUsers();
-        setUsers(response);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
-  }, []);
-
-  // Fetch channels
   useEffect(() => {
     const fetchChannels = async () => {
       try {
@@ -56,18 +41,20 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     const fetchPrivateChats = async () => {
       try {
         const response = await getPrivateChat();
+        console.log("Fetched private chats:", response);
         setPrivateChats(response);
       } catch (error) {
         console.error("Error fetching private chats:", error);
+        setPrivateChats([]);
       }
     };
 
-    if (userId) {
+    if (username) {
       fetchPrivateChats();
     }
     socket.on("privateChatUpdated", fetchPrivateChats);
     return () => socket.off("privateChatUpdated", fetchPrivateChats);
-  }, [userId]);
+  }, [username]);
 
   // Handle incoming private messages
   useEffect(() => {
@@ -75,7 +62,7 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
       setPrivateChats((prevChats) => {
         const updatedChats = [...prevChats];
         const partnerId =
-          message.senderId === userId ? message.receiverId : message.senderId;
+          message.senderId === username ? message.receiverId : message.senderId;
         const existingChatIndex = updatedChats.findIndex(
           (chat) => chat.partnerId === partnerId
         );
@@ -90,21 +77,21 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
 
     socket.on("newPrivateMessage", handleNewPrivateMessage);
     return () => socket.off("newPrivateMessage", handleNewPrivateMessage);
-  }, [userId]);
+  }, [username]);
 
   // Combine private chats with user data
   const combinedChats = useMemo(() => {
+    if (!Array.isArray(privateChats)) return [];
     return privateChats.map((chat) => {
-      const partnerId = chat.participants.find((p) => p.toString() !== userId);
-      const partner = users.find((u) => u._id === partnerId);
+      const partnerUsername = chat.participants.find((p) => p !== username);
       return {
         chatId: chat._id,
-        partnerId,
-        username: partner ? partner.username : "Unknown",
+        partnerId: partnerUsername,
+        username: partnerUsername || "Unknown",
         messages: chat.messages || [],
       };
     });
-  }, [privateChats, users, userId]);
+  }, [privateChats, username]);
 
   const filteredChannels = channels.filter((channel) =>
     (channel.name || "").toLowerCase().includes(searchQuery.toLowerCase())
@@ -116,20 +103,29 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
     );
   }, [combinedChats, searchQuery]);
 
-  const onCreatePrivateChat = async (partner) => {
-    const exists = combinedChats.find((chat) => chat.partnerId === partner._id);
+  const onCreatePrivateChat = async (partnerUsername) => {
+    const exists = combinedChats.find(
+      (chat) => chat.username.toLowerCase() === partnerUsername.toLowerCase()
+    );
     if (exists) {
-      onSelectChat({ ...partner, chatId: exists.chatId });
+      onSelectChat({ username: partnerUsername, chatId: exists.chatId });
       onSelectChatType("privateChat");
       return;
     }
     try {
       const response = await createPrivateChat({
-        participants: [userId, partner._id],
+        participants: [username, partnerUsername],
       });
+
+      console.log("New private chat created:", response.data);
+
       socket.emit("privateChatUpdated");
-      onSelectChat({ ...partner, chatId: response.data._id });
-      onSelectChatType("privateChat");
+      if (response?.data?._id) {
+        onSelectChat({ username: partnerUsername, chatId: response.data._id });
+        onSelectChatType("privateChat");
+      } else {
+        console.error("No chat ID returned in response:", response);
+      }
     } catch (error) {
       console.error("Error starting new private chat:", error);
     }
@@ -273,15 +269,10 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
                   const usernameToChat = prompt(
                     "Enter username to start chat with:"
                   );
-                  if (!usernameToChat) return;
-                  const partner = users.find(
-                    (u) =>
-                      u.username.toLowerCase() === usernameToChat.toLowerCase()
-                  );
-                  if (partner) {
-                    onCreatePrivateChat(partner);
+                  if (usernameToChat !== null && usernameToChat.trim() !== "") {
+                    onCreatePrivateChat(usernameToChat.trim());
                   } else {
-                    alert("User not found.");
+                    alert("No username entered.");
                   }
                 }}
                 className="text-blue-500"
@@ -324,21 +315,17 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
             </ul>
           </div>
         )}
-      </div>
+      </Box>
+      <Divider sx={{ backgroundColor: "gray", my: 2 }} />
 
-      <hr className="my-4 border-gray-300" />
-
-      {/* User Info and Logout */}
-      <div>
-        <div className="flex items-center mb-4">
-          <div className="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center mr-2">
-            <span className="text-white">
-              {userId ? userId.charAt(0).toUpperCase() : "A"}
-            </span>
-          </div>
-          <span>{userId || "Anonymous"}</span>
-        </div>
-        <button
+      <Box>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <Avatar sx={{ width: 32, height: 32, mr: 2 }}>
+            {username ? username.charAt(0).toUpperCase() : "A"}
+          </Avatar>
+          <Typography>{username || "Anonymous"}</Typography>
+        </Box>
+        <Button
           onClick={handleLogout}
           className="w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
         >
