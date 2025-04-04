@@ -9,7 +9,6 @@ import AdminDashboard from "./components/AdminDashboard";
 function App() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [chatType, setChatType] = useState(null);
-  const username = localStorage.getItem("username");
 
   return (
     <Routes>

@@ -27,24 +27,11 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   const [channels, setChannels] = useState([]);
   const [privateChats, setPrivateChats] = useState([]);
   const [activeTab, setActiveTab] = useState("channels");
-  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const role = localStorage.getItem("role");
   const username = localStorage.getItem("username");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await getAllUsers();
-        setUsers(response);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
-    fetchUsers();
-  }, []);
   useEffect(() => {
     const fetchChannels = async () => {
       try {
