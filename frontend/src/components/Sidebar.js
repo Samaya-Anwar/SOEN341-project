@@ -1,15 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-  TextField,
-  Button,
-  Divider,
-  Avatar,
-} from "@mui/material";
 import { io } from "socket.io-client";
 import { createChannel } from "../api/post/createChannel";
 import { getChannels } from "../api/get/getChannels";
@@ -18,7 +7,6 @@ import { createPrivateChat } from "../api/post/createPrivateChat";
 import { getPrivateChat } from "../api/get/getPrivateChats";
 import { deletePrivateChat } from "../api/delete/deletePrivateChat";
 import { useNavigate } from "react-router-dom";
-import { getAllUsers } from "../api/get/getUsers";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const socket = io(`${API_URL}`);
@@ -186,124 +174,108 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
   };
 
   return (
-    <Box
-      sx={{
-        width: "25%",
-        height: "100vh",
-        backgroundColor: "#2f3136",
-        color: "white",
-        padding: 2,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-    >
-      <TextField
-        fullWidth
-        placeholder="Search channels and private chats..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        sx={{ mb: 2, backgroundColor: "white", borderRadius: 1 }}
-      />
-      <Box>
-        <Box sx={{ display: "flex", marginBottom: 2 }}>
-          <Button
-            onClick={() => {
-              setActiveTab("channels");
-              onSelectChatType("channel");
-            }}
-            sx={{
-              color: activeTab === "channels" ? "white" : "gray",
-              fontWeight: activeTab === "channels" ? "bold" : "normal",
-              borderBottom:
-                activeTab === "channels" ? "2px solid white" : "none",
-              borderRadius: 0,
-              flexGrow: 1,
-            }}
-          >
-            Channels
-          </Button>
-          <Button
-            onClick={() => {
-              setActiveTab("privateChats");
-              onSelectChatType("privateChat");
-            }}
-            sx={{
-              color: activeTab === "privateChats" ? "white" : "gray",
-              flexGrow: 1,
-            }}
-          >
-            Private Chats
-          </Button>
-        </Box>
+    <div className="flex flex-col h-screen bg-white">
+      <div className="px-6 py-4">
+        <a href="/">
+          <img alt="ChatApp" src="./logo.png" className="h-12 w-auto" />
+        </a>
+        <h2 className="mt-4 text-xl font-bold tracking-tight text-gray-900">
+          Welcome, {username || "Anonymous"}
+        </h2>
+      </div>
+
+      <div className="px-6 mt-2 mb-4">
+        <input
+          type="text"
+          placeholder="Search channels and chats..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="block w-full rounded-md border-gray-300 border px-3 py-1.5 text-gray-900"
+        />
+      </div>
+
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => {
+            setActiveTab("channels");
+            onSelectChatType("channel");
+          }}
+          className={`flex-1 py-2 px-4 text-sm font-medium ${
+            activeTab === "channels"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Channels
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("privateChats");
+            onSelectChatType("privateChat");
+          }}
+          className={`flex-1 py-2 px-4 text-sm font-medium ${
+            activeTab === "privateChats"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Private Chats
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         {activeTab === "channels" && (
-          <>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h6">Channels</Typography>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">Channels</h3>
               {role === "admin" && (
-                <Button
+                <button
                   onClick={onCreateChannel}
-                  sx={{ color: "lightblue", mb: 1 }}
+                  className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
                 >
                   + Add Channel
-                </Button>
+                </button>
               )}
-            </Box>
-            <List>
-              {filteredChannels.map((channel) => (
-                <ListItem
-                  button
-                  key={channel.name}
-                  onClick={() => handleSelectChannel(channel.name)}
-                  sx={{
-                    borderRadius: "4px",
-                    "&:hover": { backgroundColor: "#40444b" },
-                  }}
-                >
-                  <ListItemText primary={channel.name} />
-                  {role === "admin" && (
-                    <Button
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteChannel(channel.name);
-                      }}
-                      size="small"
-                    >
-                      Delete
-                    </Button>
-                  )}
-                </ListItem>
-              ))}
-              {filteredChannels.length === 0 && (
-                <Typography
-                  variant="body2"
-                  color="gray"
-                  sx={{ textAlign: "center", my: 2 }}
-                >
-                  No channels available
-                </Typography>
-              )}
-            </List>
-          </>
+            </div>
+
+            {filteredChannels.length === 0 ? (
+              <p className="text-center text-sm text-gray-500 py-4">
+                No channels available
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {filteredChannels.map((channel) => (
+                  <li
+                    key={channel.name}
+                    className="flex justify-between items-center rounded-md hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                    onClick={() => handleSelectChannel(channel.name)}
+                  >
+                    <span className="text-gray-900">{channel.name}</span>
+                    {role === "admin" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteChannel(channel.name);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-500"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
+
         {activeTab === "privateChats" && (
-          <>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h6">Private Chats</Typography>
-              <Button
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">
+                Private Chats
+              </h3>
+              <button
                 onClick={() => {
                   const usernameToChat = prompt(
                     "Enter username to start chat with:"
@@ -314,77 +286,64 @@ const Sidebar = ({ onSelectChat, onSelectChatType = () => {} }) => {
                     alert("No username entered.");
                   }
                 }}
-                sx={{ color: "lightblue" }}
+                className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
               >
                 + New Chat
-              </Button>
-            </Box>
-            <List>
-              {filteredPrivateChats.map((chat) => (
-                <ListItem
-                  button
-                  key={chat.partnerId}
-                  onClick={() => handleSelectPrivateChat(chat)}
-                  sx={{
-                    borderRadius: 1,
-                    "&:hover": { backgroundColor: "#40444b" },
-                  }}
-                >
-                  <ListItemText
-                    primary={chat.username}
-                    secondary={
-                      chat.messages && chat.messages.length > 0
-                        ? chat.messages[chat.messages.length - 1].content
-                        : "New Conversation"
-                    }
-                  />
-                  <Button
-                    color="error"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeletePrivateChat(chat.chatId);
-                    }}
-                    size="small"
-                  >
-                    Delete
-                  </Button>
-                </ListItem>
-              ))}
-              {filteredPrivateChats.length === 0 && (
-                <Typography
-                  variant="body2"
-                  color="gray"
-                  sx={{ textAlign: "center", my: 2 }}
-                >
-                  No private chats found
-                </Typography>
-              )}
-            </List>
-          </>
-        )}
-      </Box>
-      <Divider sx={{ backgroundColor: "gray", my: 2 }} />
+              </button>
+            </div>
 
-      <Box>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Avatar sx={{ width: 32, height: 32, mr: 2 }}>
+            {filteredPrivateChats.length === 0 ? (
+              <p className="text-center text-sm text-gray-500 py-4">
+                No private chats found
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {filteredPrivateChats.map((chat) => (
+                  <li
+                    key={chat.partnerId}
+                    className="flex justify-between items-center rounded-md hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                    onClick={() => handleSelectPrivateChat(chat)}
+                  >
+                    <div>
+                      <div className="text-gray-900">{chat.username}</div>
+                      {chat.messages && chat.messages.length > 0 && (
+                        <div className="text-sm text-gray-500 truncate">
+                          {chat.messages[chat.messages.length - 1].content}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeletePrivateChat(chat.chatId);
+                      }}
+                      className="text-sm text-red-600 hover:text-red-500"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto border-t border-gray-200 px-6 py-4">
+        <div className="flex items-center mb-3">
+          <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white mr-2">
             {username ? username.charAt(0).toUpperCase() : "A"}
-          </Avatar>
-          <Typography>{username || "Anonymous"}</Typography>
-        </Box>
-        <Button
+          </div>
+          <div className="text-gray-900">{username || "Anonymous"}</div>
+        </div>
+        <button
           onClick={handleLogout}
-          sx={{
-            color: "white",
-            backgroundColor: "red",
-            "&:hover": { backgroundColor: "darkred" },
-            width: "100%",
-          }}
+          className="w-full rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500"
         >
           Logout
-        </Button>
-      </Box>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 };
 
