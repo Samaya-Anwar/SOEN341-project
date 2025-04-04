@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Box, TextField, Button, Typography, Avatar } from "@mui/material";
 import { getMessages } from "../api/get/getMessages";
 import { deleteMessage } from "../api/delete/deleteMessage";
 import { io } from "socket.io-client";
@@ -160,133 +159,128 @@ const Chatbox = ({ selectedChat, chatType }) => {
     return `#${selectedChat}`;
   };
   return (
-    <Box
-      sx={{
-        width: "75%",
-        height: "100vh",
-        backgroundColor: "#36393f",
-        color: "white",
-        padding: 2,
-      }}
-    >
-      <Typography variant="h6" sx={{ marginBottom: 2 }}>
-        {getChatTitle()}
-      </Typography>
-      <Box
-        sx={{
-          height: "80%",
-          overflowY: "auto",
-          backgroundColor: "#2f3136",
-          padding: 2,
-          borderRadius: 1,
-        }}
-      >
+    <div className="flex flex-col h-screen w-3/4 bg-white">
+      {/* Chat Header */}
+      <div className="border-b border-gray-200 px-6 py-4">
+        <h2 className="text-xl font-bold text-gray-900">{getChatTitle()}</h2>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
         {messages.map((msg, index) => (
-          <Box
+          <div
             key={index}
-            sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              marginBottom: 1,
-              padding: 1,
-              borderRadius: 1,
-              backgroundColor: msg.sender === username ? "#40444b" : "#2f3136",
-            }}
+            className={`flex items-start mb-4 ${
+              msg.sender === username ? "justify-end" : ""
+            }`}
           >
-            <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-              <Avatar
-                sx={{
-                  width: 32,
-                  height: 32,
-                  marginRight: 1,
-                  bgcolor: msg.sender === username ? "#5865f2" : "#ed4245",
-                }}
-              >
+            {msg.sender !== username && (
+              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-2 flex-shrink-0">
                 {msg.sender.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="subtitle2" color="lightgrey">
+              </div>
+            )}
+
+            <div
+              className={`max-w-md rounded-lg px-4 py-2 relative group ${
+                msg.sender === username
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div
+                  className={`text-xs mb-1 ${
+                    msg.sender === username
+                      ? "text-indigo-100"
+                      : "text-gray-500"
+                  }`}
+                >
                   {msg.sender}{" "}
                   {msg.timestamp &&
                     new Date(msg.timestamp).toLocaleTimeString()}
-                </Typography>
-                <Typography>{msg.content}</Typography>
-              </Box>
-            </Box>
-            {role === "admin" && (
-              <Button
-                onClick={() => onDeleteMessage(msg._id)}
-                sx={{ color: "red" }}
-                size="small"
-              >
-                Delete
-              </Button>
-            )}
-          </Box>
-        ))}
-        {typing && (
-          <Typography variant="body2" color="lightgrey" fontStyle="italic">
-            {chatType === "privateChat" ? "Someone" : "Someone"} is typing...
-          </Typography>
-        )}
-      </Box>
+                </div>
 
-      <Box sx={{ marginBottom: 2 }}>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={onSummarize}
-          sx={{ marginRight: 2 }}
-        >
-          Summarize
-        </Button>
-        {summary && (
-          <Box
-            sx={{
-              marginTop: 2,
-              backgroundColor: "#2f3136",
-              padding: 2,
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="body1">{summary}</Typography>
-            <Button
-              variant="outlined"
-              color="inherit"
+                {role === "admin" && (
+                  <button
+                    onClick={() => onDeleteMessage(msg._id)}
+                    className="ml-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div>{msg.content}</div>
+            </div>
+
+            {msg.sender === username && (
+              <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white ml-2 flex-shrink-0">
+                {msg.sender.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+        ))}
+
+        {typing && (
+          <div className="text-sm text-gray-500 italic">
+            Someone is typing...
+          </div>
+        )}
+      </div>
+
+      {/* Summary Section */}
+      {summary && (
+        <div className="px-6 py-4 bg-gray-100 border-t border-gray-200">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="font-medium text-gray-900 mb-2">
+              Conversation Summary
+            </h3>
+            <p className="text-gray-700">{summary}</p>
+            <button
               onClick={() => setSummary("")}
-              sx={{ marginTop: 1 }}
+              className="mt-3 text-sm text-indigo-600 hover:text-indigo-500"
             >
               Close
-            </Button>
-          </Box>
-        )}
-      </Box>
+            </button>
+          </div>
+        </div>
+      )}
 
-      <Box sx={{ display: "flex", marginTop: 2 }}>
-        <TextField
-          variant="outlined"
-          fullWidth
-          placeholder={`Message ${
-            chatType === "privateChat" ? selectedChat : "#" + selectedChat
-          }...`}
-          sx={{ backgroundColor: "white", borderRadius: 1 }}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          disabled={!selectedChat}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={onSendMessage}
-          sx={{ marginLeft: 1 }}
-          disabled={!input.trim() || !selectedChat}
-        >
-          Send
-        </Button>
-      </Box>
-    </Box>
+      {/* Input Area */}
+      <div className="px-6 py-4 border-t border-gray-200">
+        {!summary && (
+          <button
+            onClick={onSummarize}
+            className="mb-4 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200"
+            disabled={!selectedChat}
+          >
+            Summarize Conversation
+          </button>
+        )}
+
+        <div className="flex">
+          <input
+            type="text"
+            placeholder={`Message ${
+              chatType === "privateChat" && selectedChat?.username
+                ? selectedChat.username
+                : "#" + selectedChat
+            }...`}
+            className="flex-1 rounded-md border-gray-300 border px-3 py-2 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyPress}
+            disabled={!selectedChat}
+          />
+          <button
+            onClick={onSendMessage}
+            className="ml-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!input.trim() || !selectedChat}
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
