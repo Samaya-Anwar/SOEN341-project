@@ -97,22 +97,22 @@ const Chatbox = ({ selectedChat, chatType }) => {
   const onSendMessage = async () => {
     if (!input.trim() || !selectedChat) return;
     let messageData;
+    const channel = chatType === "privateChat" ? privateChatId : selectedChat;
     if (chatType === "privateChat") {
       messageData = {
         sender: username,
         content: input,
-        channel: privateChatId,
+        channel,
         type: "privateChat",
       };
     } else {
       messageData = {
         sender: username,
         content: input,
-        channel: selectedChat,
+        channel,
         type: "channel",
       };
     }
-    setMessages((prev) => [...prev, { ...messageData, _id: Date.now() }]);
 
     try {
       await sendMessage(messageData);
@@ -120,6 +120,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
     } catch (error) {
       console.error("Error sending message:", error);
     }
+    console.log("Message sent:", messageData);
   };
 
   const handleKeyPress = (event) => {
@@ -267,9 +268,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
           variant="outlined"
           fullWidth
           placeholder={`Message ${
-            chatType === "privateChat"
-              ? selectedChat.username
-              : "#" + selectedChat
+            chatType === "privateChat" ? selectedChat : "#" + selectedChat
           }...`}
           sx={{ backgroundColor: "white", borderRadius: 1 }}
           value={input}

@@ -8,6 +8,7 @@ import AdminDashboard from "./components/AdminDashboard";
 
 function App() {
   const [selectedChat, setSelectedChat] = useState(null);
+  const [chatType, setChatType] = useState(null);
   const username = localStorage.getItem("username");
 
   return (
@@ -27,8 +28,11 @@ function App() {
         element={
           <ProtectedRoute>
             <div style={{ display: "flex" }}>
-              <Sidebar onSelectChat={setSelectedChat} />
-              <Chatbox selectedChat={selectedChat} username={username} />
+              <Sidebar
+                onSelectChat={setSelectedChat}
+                onSelectChatType={setChatType}
+              />
+              <Chatbox selectedChat={selectedChat} chatType={chatType} />
             </div>
           </ProtectedRoute>
         }
@@ -48,6 +52,5 @@ const AdminRoute = ({ children }) => {
   const role = localStorage.getItem("role");
   return token && role === "admin" ? children : <Navigate to="/" />;
 };
-
 
 export default App;

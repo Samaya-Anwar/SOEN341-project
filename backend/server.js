@@ -27,7 +27,9 @@ io.on("connection", (socket) => {
   socket.on("deleteMessage", (messageId) => {
     io.emit("messageDeleted", messageId);
   });
-
+  socket.on("typing", (data) => {
+    socket.to(data.channel).emit("userTyping", data);
+  });
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
