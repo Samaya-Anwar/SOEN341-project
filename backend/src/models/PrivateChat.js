@@ -2,19 +2,18 @@ const mongoose = require("mongoose");
 
 const privateChatSchema = new mongoose.Schema(
   {
-    senderID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+    participants: {
+      type: [String],
+      validate: {
+        validator: function (v) {
+          return v.length === 2;
+        },
+        message: "Exactly two participants are required for a private chat",
+      },
+      required: [true, "Participants are required"],
     },
-    receiverID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    content: { type: String, required: true },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("PrivateMessage", privateChatSchema);
+module.exports = mongoose.model("PrivateChat", privateChatSchema);

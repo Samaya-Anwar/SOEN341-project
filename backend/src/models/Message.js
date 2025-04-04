@@ -4,6 +4,7 @@ const messageSchema = new mongoose.Schema({
   sender: { type: String, required: true },
   content: { type: String, required: true },
   channel: { type: String, required: true },
+  type: { type: String, enum: ["channel", "privateChat"], default: "channel" },
   timestamp: { type: Date, default: Date.now },
 });
 

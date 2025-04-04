@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Avatar,
-  Tooltip,
-} from "@mui/material";
+import React, { useState, useEffect, useMemo } from "react";
+import { Box, TextField, Button, Typography, Avatar } from "@mui/material";
 import { getMessages } from "../api/get/getMessages";
 import { deleteMessage } from "../api/delete/deleteMessage";
 import { io } from "socket.io-client";
@@ -14,7 +7,6 @@ import { sendMessage } from "../api/post/sendMessage";
 import { getChatSummary } from "../api/get/getChatSummary";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
-
 const socket = io(API_URL);
 
 const Chatbox = ({ selectedChat, chatType }) => {
@@ -22,76 +14,60 @@ const Chatbox = ({ selectedChat, chatType }) => {
   const [input, setInput] = useState("");
   const [summary, setSummary] = useState("");
   const [typing, setTyping] = useState(false);
-  const [typingTimeout, setTypingTimeout] = useState(null);
-  const [recipient, setRecipient] = useState(null);
 
   const username = localStorage.getItem("username") || "Anonymous";
   const role = localStorage.getItem("role");
 
   useEffect(() => {
-    if (chatType === "dm" && selectedChat) {
-      setRecipient(selectedChat);
-      const users = [username, selectedChat].sort();
-      const dmRoom = `dm_${users[0]}_${users[1]}`;
-      socket.emit("joinDM", dmRoom);
-    } else if (chatType === "channel" && selectedChat) {
-      setRecipient(null);
+    setMessages([]);
+    setInput("");
+    setSummary("");
+  }, [selectedChat, chatType]);
+
+  const privateChatId = useMemo(() => {
+    return chatType === "privateChat" && selectedChat && selectedChat.username
+      ? `privateChat_${[username, selectedChat.username].sort().join("_")}`
+      : null;
+  }, [chatType, selectedChat, username]);
+
+  useEffect(() => {
+    if (!selectedChat) return;
+    if (chatType === "privateChat") {
+      socket.emit("joinPrivateChat", privateChatId);
+    } else if (chatType === "channel") {
       socket.emit("joinChannel", selectedChat);
     }
-  }, [selectedChat, chatType, username]);
+  }, [selectedChat, chatType, username, privateChatId]);
 
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
-
       try {
-        let response;
-        if (chatType === "dm") {
-          // For DMs, we need to provide both participants
-          const users = [username, selectedChat].sort();
-          const dmRoom = `dm_${users[0]}_${users[1]}`;
-          response = await getMessages(dmRoom, "dm");
-        } else {
-          // For channels
-          response = await getMessages(selectedChat, "channel");
-        }
-
-        setMessages(response);
+        const conversationId =
+          chatType === "privateChat" ? privateChatId : selectedChat;
+        const response = await getMessages(conversationId);
+        setMessages(Array.isArray(response) ? response : []);
       } catch (error) {
         console.error(`Error fetching ${chatType} messages:`, error);
       }
     };
-
     fetchMessages();
-  }, [selectedChat, chatType, username]);
+  }, [selectedChat, chatType, username, privateChatId]);
 
-  // Listen for new messages & message deletions
   useEffect(() => {
     const handleNewMessage = (newMessage) => {
-      const isDMForMe =
-        chatType === "dm" &&
-        ((newMessage.sender === recipient &&
-          newMessage.recipient === username) ||
-          (newMessage.sender === username &&
-            newMessage.recipient === recipient));
-
-      const isChannelMessage =
-        chatType === "channel" && newMessage.channel === selectedChat;
-
-      if (isDMForMe || isChannelMessage) {
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      const conversationId =
+        chatType === "privateChat" ? privateChatId : selectedChat;
+      if (newMessage.channel === conversationId) {
+        setMessages((prev) => [...prev, newMessage]);
       }
     };
-
     const handleDeleteMessage = (messageId) => {
-      setMessages((prevMessages) =>
-        prevMessages.filter((msg) => msg._id !== messageId)
-      );
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     };
-
     const handleTyping = (data) => {
       if (
-        (chatType === "dm" && data.sender === recipient) ||
+        (chatType === "privateChat" && data.channel === privateChatId) ||
         (chatType === "channel" && data.channel === selectedChat)
       ) {
         setTyping(true);
@@ -108,50 +84,34 @@ const Chatbox = ({ selectedChat, chatType }) => {
       socket.off("messageDeleted", handleDeleteMessage);
       socket.off("userTyping", handleTyping);
     };
-  }, [selectedChat, chatType, username, recipient]);
+  }, [selectedChat, chatType, username, privateChatId]);
 
   const handleTypingIndication = () => {
-    if (typingTimeout) clearTimeout(typingTimeout);
-
-    if (chatType === "dm") {
-      // For DMs, emit typing to the specific user
-      socket.emit("typing", { sender: username, recipient: recipient });
+    if (chatType === "privateChat") {
+      socket.emit("typing", { sender: username, channel: privateChatId });
     } else {
-      // For channels
       socket.emit("typing", { sender: username, channel: selectedChat });
     }
-
-    // Set a timeout to prevent too many typing events
-    setTypingTimeout(
-      setTimeout(() => {
-        setTypingTimeout(null);
-      }, 2000)
-    );
   };
 
   const onSendMessage = async () => {
     if (!input.trim() || !selectedChat) return;
-
     let messageData;
-
-    if (chatType === "dm") {
+    const channel = chatType === "privateChat" ? privateChatId : selectedChat;
+    if (chatType === "privateChat") {
       messageData = {
         sender: username,
         content: input,
-        recipient: recipient,
-        type: "dm",
+        channel,
+        type: "privateChat",
       };
     } else {
       messageData = {
         sender: username,
         content: input,
-        channel: selectedChat,
+        channel,
         type: "channel",
       };
-    }
-    if (!username || !selectedChat) {
-      console.error("Missing required message data:", messageData);
-      return;
     }
 
     try {
@@ -160,7 +120,9 @@ const Chatbox = ({ selectedChat, chatType }) => {
     } catch (error) {
       console.error("Error sending message:", error);
     }
+    console.log("Message sent:", messageData);
   };
+
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -189,16 +151,14 @@ const Chatbox = ({ selectedChat, chatType }) => {
       setSummary("Could not generate summary.");
     }
   };
+
   const getChatTitle = () => {
     if (!selectedChat) return "Select a chat";
-
-    if (chatType === "dm") {
-      return `Direct message with ${selectedChat}`;
-    } else {
-      return `#${selectedChat}`;
+    if (selectedChat.username) {
+      return `${selectedChat.username}`;
     }
+    return `#${selectedChat}`;
   };
-
   return (
     <Box
       sx={{
@@ -267,7 +227,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
         ))}
         {typing && (
           <Typography variant="body2" color="lightgrey" fontStyle="italic">
-            {chatType === "dm" ? recipient : "Someone"} is typing...
+            {chatType === "privateChat" ? "Someone" : "Someone"} is typing...
           </Typography>
         )}
       </Box>
@@ -308,7 +268,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
           variant="outlined"
           fullWidth
           placeholder={`Message ${
-            chatType === "dm" ? recipient : "#" + selectedChat
+            chatType === "privateChat" ? selectedChat : "#" + selectedChat
           }...`}
           sx={{ backgroundColor: "white", borderRadius: 1 }}
           value={input}
