@@ -2,7 +2,15 @@ const axios = require("axios");
 const { openaiApiKey } = require("../config/config");
 
 async function generateSummary(messages) {
-  const conversation = messages.join("\n");
+  const validMessages = Array.isArray(messages)
+    ? messages.filter(msg => msg && msg.trim() !== "")
+    : [];
+
+  if (validMessages.length === 0) {
+    return "No messages to summarize.";
+  }
+
+  const conversation = validMessages.join("\n");
   const sys_prompt = `You are a professional chat summarizer. Your task is to generate a concise, 
                   clear summary of a conversation in bullet points. In your summary, focus on the main topics 
                   discussed, decisions made, and any action items. The summary should not include verbatim quotes from the conversation.
@@ -17,10 +25,10 @@ async function generateSummary(messages) {
                   
                   Example output: • The 3pm meeting is confirmed. 
                                   • Charlie might be late due to traffic.
-                                  • Bob wills send out the quarterly report via email and it must be reviewed before joining the meeting.
+                                  • Bob will send out the quarterly report via email and it must be reviewed before joining the meeting.
                                   • Charlie will prepare a draft timeline for the project deadlines that will be dicussed.
                   
-                  Summarize the conversation delimited by triple quotes`;
+                  Summarize the conversation below delimited by triple quotes:`;
   
   const prompt = `"""${conversation}"""`;
   
@@ -41,7 +49,7 @@ async function generateSummary(messages) {
             content: prompt
           }
         ],
-        max_tokens: 150,
+        max_tokens: 300,
         temperature: 0.7,
       },
       {

@@ -232,36 +232,39 @@ const Chatbox = ({ selectedChat, chatType }) => {
         )}
       </Box>
 
-      <Box sx={{ marginBottom: 2 }}>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={onSummarize}
-          sx={{ marginRight: 2 }}
-        >
-          Summarize
-        </Button>
-        {summary && (
-          <Box
-            sx={{
-              marginTop: 2,
-              backgroundColor: "#2f3136",
-              padding: 2,
-              borderRadius: 1,
-            }}
+      
+      {chatType !== "privateChat" && (
+        <Box sx={{ marginBottom: 2 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={onSummarize}
+            sx={{ marginRight: 2 }}
           >
-            <Typography variant="body1">{summary}</Typography>
-            <Button
-              variant="outlined"
-              color="inherit"
-              onClick={() => setSummary("")}
-              sx={{ marginTop: 1 }}
+            Summarize
+          </Button>
+          {summary && (
+            <Box
+              sx={{
+                marginTop: 2,
+                backgroundColor: "#2f3136",
+                padding: 2,
+                borderRadius: 1,
+              }}
             >
-              Close
-            </Button>
-          </Box>
-        )}
-      </Box>
+              <Typography variant="body1">{summary}</Typography>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => setSummary("")}
+                sx={{ marginTop: 1 }}
+              >
+                Close
+              </Button>
+            </Box>
+          )}
+        </Box>
+      )}
 
       <Box sx={{ display: "flex", marginTop: 2 }}>
         <TextField
