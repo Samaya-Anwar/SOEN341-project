@@ -154,15 +154,34 @@ const Chatbox = ({ selectedChat, chatType }) => {
       console.error("Error deleting message:", error);
     }
   };
-  const onSummarize = async () => {
-    if (!selectedChat) return;
 
+  const onSummarize = async () => {
     try {
-      const data = await getChatSummary(selectedChat);
-      setSummary(data.summary || "No summary available.");
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_API_URL}/api/summarize`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            chatId: selectedChat,
+            chatType: chatType,
+            messages: messages,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate summary");
+      }
+
+      const data = await response.json();
+      setSummary(data.summary);
     } catch (error) {
-      console.error("Error fetching summary:", error);
-      setSummary("Could not generate summary.");
+      console.error("Error generating summary:", error);
+      alert("Failed to generate chat summary");
     }
   };
 
@@ -176,7 +195,9 @@ const Chatbox = ({ selectedChat, chatType }) => {
 
   const handleScroll = (e) => {
     const bottom =
-      e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+      Math.abs(
+        e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight
+      ) < 1;
     setIsAtBottom(bottom);
     setShowScrollButton(!bottom);
   };
@@ -190,6 +211,15 @@ const Chatbox = ({ selectedChat, chatType }) => {
     setInput((prev) => prev + emoji);
     setShowEmojiList(false);
   };
+
+  useEffect(() => {
+    if (isAtBottom) {
+      const chatContainer = document.getElementById("message-area");
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }
+  }, [messages, isAtBottom]);
 
   return (
     <div
@@ -507,6 +537,70 @@ const Chatbox = ({ selectedChat, chatType }) => {
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Summarize Button */}
+        {!summary && messages.length > 0 && (
+          <div className="px-4 pt-3">
+            <button
+              onClick={onSummarize}
+              className={`
+                px-4 py-2 text-sm font-medium rounded-lg w-full sm:w-auto
+                ${
+                  isDarkMode
+                    ? "bg-indigo-500 text-white hover:bg-indigo-400"
+                    : "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
+                }
+                transition-colors
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+              disabled={!selectedChat}
+            >
+              Summarize Conversation
+            </button>
+          </div>
+        )}
+
+        {/* Summary Display */}
+        {summary && (
+          <div
+            className={`px-4 py-3 ${isDarkMode ? "bg-gray-800" : "bg-gray-50"}`}
+          >
+            <div
+              className={`
+              rounded-lg p-4
+              ${isDarkMode ? "bg-gray-700" : "bg-white"}
+              shadow-sm
+            `}
+            >
+              <h3
+                className={`font-medium ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                } mb-2`}
+              >
+                Conversation Summary
+              </h3>
+              <p
+                className={`${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
+              >
+                {summary}
+              </p>
+              <button
+                onClick={() => setSummary("")}
+                className={`
+                  mt-3 text-sm
+                  ${
+                    isDarkMode
+                      ? "text-indigo-400 hover:text-indigo-300"
+                      : "text-indigo-600 hover:text-indigo-500"
+                  }
+                  transition-colors
+                `}
+              >
+                Close Summary
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
