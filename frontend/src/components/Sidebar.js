@@ -7,6 +7,8 @@ import { createPrivateChat } from "../api/post/createPrivateChat";
 import { getPrivateChat } from "../api/get/getPrivateChats";
 import { deletePrivateChat } from "../api/delete/deletePrivateChat";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
+import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const socket = io(`${API_URL}`);
@@ -24,6 +26,7 @@ const Sidebar = ({
   const role = localStorage.getItem("role");
   const username = localStorage.getItem("username");
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -376,6 +379,24 @@ const Sidebar = ({
             className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
           >
             Logout
+          </button>
+          <button
+            onClick={toggleTheme}
+            className={`
+              p-2 rounded-lg
+              ${
+                isDarkMode
+                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }
+              transition-colors duration-200
+            `}
+          >
+            {isDarkMode ? (
+              <SunIcon className="h-5 w-5" />
+            ) : (
+              <MoonIcon className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>

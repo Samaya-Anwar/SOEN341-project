@@ -4,15 +4,30 @@ import { deleteMessage } from "../api/delete/deleteMessage";
 import { io } from "socket.io-client";
 import { sendMessage } from "../api/post/sendMessage";
 import { getChatSummary } from "../api/get/getChatSummary";
+import { useTheme } from "../context/ThemeContext";
+import {
+  EllipsisHorizontalIcon,
+  ArrowDownCircleIcon,
+  PaperAirplaneIcon,
+  FaceSmileIcon,
+  PhotoIcon,
+  DocumentIcon,
+} from "@heroicons/react/24/outline";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const socket = io(API_URL);
+
+const commonEmojis = ["😊", "👍", "❤️", "😂", "🎉", "🔥", "👋", "✨"];
 
 const Chatbox = ({ selectedChat, chatType }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [summary, setSummary] = useState("");
   const [typing, setTyping] = useState(false);
+  const [showEmojiList, setShowEmojiList] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const { isDarkMode } = useTheme();
 
   const username = localStorage.getItem("username") || "Anonymous";
   const role = localStorage.getItem("role");
@@ -158,17 +173,111 @@ const Chatbox = ({ selectedChat, chatType }) => {
     }
     return `#${selectedChat}`;
   };
+
+  const handleScroll = (e) => {
+    const bottom =
+      e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+    setIsAtBottom(bottom);
+    setShowScrollButton(!bottom);
+  };
+
+  const scrollToBottom = () => {
+    const messageArea = document.getElementById("message-area");
+    messageArea.scrollTop = messageArea.scrollHeight;
+  };
+
+  const addEmoji = (emoji) => {
+    setInput((prev) => prev + emoji);
+    setShowEmojiList(false);
+  };
+
   return (
-    <div className="flex flex-col flex-1 h-[calc(100vh-3.5rem)] md:h-screen bg-white">
-      {/* Chat Header */}
-      <div className="border-b border-gray-200 px-4 sm:px-6 py-4 bg-white shadow-sm">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-          {getChatTitle()}
-        </h2>
+    <div
+      className={`
+      flex flex-col h-[calc(100vh-4rem)] md:h-screen w-full
+      ${isDarkMode ? "bg-gray-900" : "bg-white"}
+      transition-colors duration-200
+    `}
+    >
+      {/* Header */}
+      <div
+        className={`
+        sticky top-0 z-20
+        px-4 py-3 md:py-4
+        border-b ${
+          isDarkMode
+            ? "border-gray-700 bg-gray-800"
+            : "border-gray-200 bg-white"
+        }
+        flex items-center justify-between
+      `}
+      >
+        <div className="flex items-center space-x-3">
+          <div
+            className={`
+            h-10 w-10 rounded-full flex items-center justify-center
+            ${isDarkMode ? "bg-gray-700" : "bg-indigo-100"}
+          `}
+          >
+            {chatType === "privateChat" ? (
+              <span
+                className={`text-lg font-semibold ${
+                  isDarkMode ? "text-white" : "text-indigo-600"
+                }`}
+              >
+                {selectedChat?.username?.charAt(0).toUpperCase()}
+              </span>
+            ) : (
+              <span
+                className={`text-lg font-semibold ${
+                  isDarkMode ? "text-white" : "text-indigo-600"
+                }`}
+              >
+                #
+              </span>
+            )}
+          </div>
+          <div>
+            <h2
+              className={`text-lg font-bold ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              } truncate`}
+            >
+              {getChatTitle()}
+            </h2>
+            <p
+              className={`text-sm ${
+                isDarkMode ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
+              {typing ? "Typing..." : "Online"}
+            </p>
+          </div>
+        </div>
+        <button
+          className={`p-2 rounded-full hover:${
+            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          }`}
+        >
+          <EllipsisHorizontalIcon
+            className={`h-6 w-6 ${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          />
+        </button>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+      <div
+        id="message-area"
+        className={`
+          flex-1 overflow-y-auto
+          px-3 py-4 md:px-6 md:py-6
+          ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}
+          space-y-3
+        `}
+        onScroll={handleScroll}
+      >
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -177,25 +286,48 @@ const Chatbox = ({ selectedChat, chatType }) => {
             }`}
           >
             {msg.sender !== username && (
-              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+              <div
+                className={`
+                h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center flex-shrink-0
+                ${
+                  isDarkMode
+                    ? "bg-gray-700 text-white"
+                    : "bg-indigo-100 text-indigo-600"
+                }
+              `}
+              >
                 {msg.sender.charAt(0).toUpperCase()}
               </div>
             )}
 
             <div
-              className={`max-w-[75%] sm:max-w-[70%] rounded-lg px-4 py-2 relative group ${
+              className={`
+              group relative max-w-[75%] sm:max-w-[70%] rounded-2xl px-4 py-2
+              ${
                 msg.sender === username
-                  ? "bg-indigo-600 text-white ml-auto"
+                  ? isDarkMode
+                    ? "bg-indigo-600 text-white"
+                    : "bg-indigo-600 text-white"
+                  : isDarkMode
+                  ? "bg-gray-800 text-gray-100"
                   : "bg-white text-gray-800 border border-gray-200"
-              }`}
+              }
+              ${msg.sender === username ? "rounded-br-none" : "rounded-bl-none"}
+              shadow-sm hover:shadow-md transition-shadow duration-200
+            `}
             >
               <div className="flex justify-between items-start gap-2">
                 <div
-                  className={`text-xs sm:text-sm mb-1 ${
+                  className={`
+                  text-xs sm:text-sm mb-1
+                  ${
                     msg.sender === username
                       ? "text-indigo-100"
+                      : isDarkMode
+                      ? "text-gray-400"
                       : "text-gray-500"
-                  }`}
+                  }
+                `}
                 >
                   {msg.sender}{" "}
                   <span className="text-xs opacity-75">
@@ -219,7 +351,12 @@ const Chatbox = ({ selectedChat, chatType }) => {
             </div>
 
             {msg.sender === username && (
-              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white flex-shrink-0">
+              <div
+                className={`
+                h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center flex-shrink-0
+                ${isDarkMode ? "bg-indigo-600" : "bg-indigo-600"} text-white
+              `}
+              >
                 {msg.sender.charAt(0).toUpperCase()}
               </div>
             )}
@@ -227,62 +364,147 @@ const Chatbox = ({ selectedChat, chatType }) => {
         ))}
 
         {typing && (
-          <div className="text-sm text-gray-500 italic px-4">
-            Someone is typing...
+          <div
+            className={`
+            text-sm ${
+              isDarkMode ? "text-gray-400" : "text-gray-500"
+            } italic px-4
+            flex items-center space-x-2
+          `}
+          >
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 rounded-full bg-current animate-bounce" />
+              <div className="w-2 h-2 rounded-full bg-current animate-bounce delay-100" />
+              <div className="w-2 h-2 rounded-full bg-current animate-bounce delay-200" />
+            </div>
+            <span>Someone is typing...</span>
           </div>
         )}
       </div>
 
-      {/* Summary Section */}
-      {summary && (
-        <div className="px-4 sm:px-6 py-4 bg-gray-100 border-t border-gray-200">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <h3 className="font-medium text-gray-900 mb-2">
-              Conversation Summary
-            </h3>
-            <p className="text-sm sm:text-base text-gray-700">{summary}</p>
-            <button
-              onClick={() => setSummary("")}
-              className="mt-3 text-sm text-indigo-600 hover:text-indigo-500 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+      {/* Scroll to Bottom Button */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className={`
+            absolute bottom-24 right-6 p-2 rounded-full shadow-lg
+            ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-600"}
+            hover:scale-110 transition-transform duration-200
+          `}
+        >
+          <ArrowDownCircleIcon className="h-6 w-6" />
+        </button>
       )}
 
       {/* Input Area */}
-      <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-white">
-        {!summary && (
-          <button
-            onClick={onSummarize}
-            className="mb-4 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!selectedChat}
+      <div
+        className={`
+        px-3 py-3 md:px-6 md:py-4
+        border-t ${
+          isDarkMode
+            ? "border-gray-700 bg-gray-800"
+            : "border-gray-200 bg-white"
+        }
+        sticky bottom-0 z-20
+      `}
+      >
+        {showEmojiList && (
+          <div
+            className={`
+            absolute bottom-full mb-2 p-2 rounded-lg shadow-lg
+            ${
+              isDarkMode
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-200"
+            }
+            border flex gap-2 flex-wrap max-w-[200px]
+          `}
           >
-            Summarize Conversation
-          </button>
+            {commonEmojis.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => addEmoji(emoji)}
+                className="text-xl hover:scale-110 transition-transform"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
         )}
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder={`Message ${
-              chatType === "privateChat" && selectedChat?.username
-                ? selectedChat.username
-                : "#" + selectedChat
-            }...`}
-            className="flex-1 rounded-lg border-gray-300 border px-3 py-2 text-sm sm:text-base text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            disabled={!selectedChat}
-          />
+        <div className="flex items-end gap-2">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              placeholder={`Message ${
+                chatType === "privateChat" && selectedChat?.username
+                  ? selectedChat.username
+                  : "#" + selectedChat
+              }...`}
+              className={`
+                w-full rounded-lg px-4 py-3 pr-12
+                ${
+                  isDarkMode
+                    ? "bg-gray-700 text-white border-gray-600 focus:border-indigo-500"
+                    : "bg-white text-gray-900 border-gray-300 focus:border-indigo-500"
+                }
+                border focus:ring-2 focus:ring-indigo-500
+                transition-all duration-200
+                text-sm sm:text-base
+              `}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              disabled={!selectedChat}
+            />
+            <div className="absolute right-2 bottom-2 flex space-x-2">
+              <button
+                onClick={() => setShowEmojiList(!showEmojiList)}
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isDarkMode
+                    ? "text-gray-400 hover:bg-gray-600"
+                    : "text-gray-500"
+                }`}
+              >
+                <FaceSmileIcon className="h-5 w-5" />
+              </button>
+              <button
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isDarkMode
+                    ? "text-gray-400 hover:bg-gray-600"
+                    : "text-gray-500"
+                }`}
+              >
+                <PhotoIcon className="h-5 w-5" />
+              </button>
+              <button
+                className={`p-1 rounded-full hover:bg-gray-100 ${
+                  isDarkMode
+                    ? "text-gray-400 hover:bg-gray-600"
+                    : "text-gray-500"
+                }`}
+              >
+                <DocumentIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
           <button
             onClick={onSendMessage}
-            className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm sm:text-base"
             disabled={!input.trim() || !selectedChat}
+            className={`
+              p-3 rounded-full
+              ${
+                isDarkMode
+                  ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                  : "bg-indigo-600 text-white hover:bg-indigo-500"
+              }
+              disabled:opacity-50 disabled:cursor-not-allowed
+              transition-all duration-200
+              hover:scale-105
+              flex-shrink-0
+            `}
           >
-            Send
+            <PaperAirplaneIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
