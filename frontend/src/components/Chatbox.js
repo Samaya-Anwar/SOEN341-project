@@ -156,32 +156,14 @@ const Chatbox = ({ selectedChat, chatType }) => {
   };
 
   const onSummarize = async () => {
+    if (!selectedChat) return;
+
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_API_URL}/api/summarize`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            chatId: selectedChat,
-            chatType: chatType,
-            messages: messages,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to generate summary");
-      }
-
-      const data = await response.json();
-      setSummary(data.summary);
+      const data = await getChatSummary(selectedChat);
+      setSummary(data.summary || "No summary available.");
     } catch (error) {
-      console.error("Error generating summary:", error);
-      alert("Failed to generate chat summary");
+      console.error("Error fetching summary:", error);
+      setSummary("Could not generate summary.");
     }
   };
 
@@ -538,7 +520,6 @@ const Chatbox = ({ selectedChat, chatType }) => {
           </button>
         </div>
 
-        {/* Summarize Button */}
         {!summary && messages.length > 0 && (
           <div className="px-4 pt-3">
             <button
@@ -560,7 +541,6 @@ const Chatbox = ({ selectedChat, chatType }) => {
           </div>
         )}
 
-        {/* Summary Display */}
         {summary && (
           <div
             className={`px-4 py-3 ${isDarkMode ? "bg-gray-800" : "bg-gray-50"}`}

@@ -4,6 +4,8 @@ import { signUpUser } from "../api/post/signUpUser";
 import { loginUser } from "../api/post/loginUser";
 import axios from "axios";
 import { GoogleLogin } from "@react-oauth/google";
+import { useTheme } from "../context/ThemeContext";
+import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,6 +14,7 @@ const LoginSignup = () => {
     password: "",
   });
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -78,89 +81,149 @@ const LoginSignup = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <a href="/">
-          <img alt="ChatApp" src="./logo.png" className="mx-auto h-18 w-auto" />
-        </a>
-        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-          {isLogin
-            ? "Log in to continue chatting."
-            : "Create an account to start chatting."}
-        </h2>
+    <div
+      className={`min-h-screen flex items-center justify-center px-4 py-8 sm:px-6 sm:py-12 ${
+        isDarkMode ? "bg-gray-900" : "bg-white"
+      }`}
+    >
+      {/* Theme Toggle */}
+      <div className="fixed top-3 right-3 sm:top-4 sm:right-4">
+        <button
+          onClick={toggleTheme}
+          className={`p-2 rounded-lg transition-colors ${
+            isDarkMode
+              ? "hover:bg-gray-800 text-gray-300"
+              : "hover:bg-gray-100 text-gray-600"
+          }`}
+        >
+          {isDarkMode ? (
+            <SunIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          ) : (
+            <MoonIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          )}
+        </button>
       </div>
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-900"
-            >
-              Username
-            </label>
-            <div className="mt-2">
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                placeholder="Username"
-                value={loginData.username}
-                onChange={(e) =>
-                  setLoginData({ ...loginData, username: e.target.value })
-                }
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
-              />
+
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo */}
+        <div className="text-center">
+          <a href="/">
+            <img
+              alt="ChatApp"
+              src="./logo.png"
+              className="mx-auto h-12 w-auto sm:h-14 md:h-16 transition-all duration-200"
+            />
+          </a>
+          <h2
+            className={`mt-4 sm:mt-6 text-2xl sm:text-3xl font-bold tracking-tight ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {isLogin ? "Log in to continue chatting" : "Create an account"}
+          </h2>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-5">
+            <div>
+              <label
+                htmlFor="username"
+                className={`block text-sm font-medium ${
+                  isDarkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
+                Username
+              </label>
+              <div className="mt-1">
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={loginData.username}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, username: e.target.value })
+                  }
+                  className={`block w-full rounded-lg px-3 py-2 text-sm sm:text-base border ${
+                    isDarkMode
+                      ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                  } focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors`}
+                  placeholder="Enter your username"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className={`block text-sm font-medium ${
+                  isDarkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
+                  className={`block w-full rounded-lg px-3 py-2 text-sm sm:text-base border ${
+                    isDarkMode
+                      ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                  } focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors`}
+                  placeholder="Enter your password"
+                />
+              </div>
             </div>
           </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-900"
-            >
-              Password
-            </label>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                placeholder="Password"
-                value={loginData.password}
-                onChange={(e) =>
-                  setLoginData({ ...loginData, password: e.target.value })
-                }
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
-              />
-            </div>
-          </div>
-          {/* Google Login Button */}
-          <div className="flex w-full justify-center">
-            {isLogin && (
+
+          {/* Google Login */}
+          {isLogin && (
+            <div className="flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleLoginSuccess}
                 onError={handleGoogleLoginFailure}
               />
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
           <div>
             <button
               type="submit"
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm sm:text-base font-medium text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
             >
-              {isLogin ? "Log In" : "Sign Up"}
+              {isLogin ? "Sign in" : "Create account"}
             </button>
-            <p className="mt-10 text-center text-sm text-gray-500">
-              {isLogin ? "Not a member?" : "Already a member?"}{" "}
-              <button
-                onClick={toggleForm}
-                className="text-indigo-600 hover:text-indigo-500 cursor-pointer bg-transparent border-none p-0"
-              >
-                {isLogin ? "Sign up" : "Log in"}
-              </button>
-            </p>
           </div>
+
+          {/* Toggle Login/Signup */}
+          <p
+            className={`text-sm text-center ${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              type="button"
+              onClick={toggleForm}
+              className={`font-medium ${
+                isDarkMode
+                  ? "text-indigo-400 hover:text-indigo-300"
+                  : "text-indigo-600 hover:text-indigo-500"
+              } transition-colors`}
+            >
+              {isLogin ? "Sign up" : "Sign in"}
+            </button>
+          </p>
         </form>
       </div>
     </div>

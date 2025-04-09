@@ -1,23 +1,48 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/20/solid";
-export default function Example() {
+import { useTheme } from "../context/ThemeContext";
+import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
+
+export default function Hero() {
+  const { isDarkMode, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="bg-white">
+    <div
+      className={`min-h-screen relative overflow-hidden ${
+        isDarkMode ? "bg-gray-900" : "bg-white"
+      }`}
+    >
+      {/* Header */}
       <header className="absolute inset-x-0 top-0 z-50">
-        <nav
-          aria-label="Global"
-          className="flex items-center justify-between p-6 lg:px-8"
-        >
-          <div className="flex lg:flex-1">
-            <a href="/" className="-m-1.5 p-1.5">
-              <img alt="ChatApp" src="./logo.png" className="h-20 w-auto" />
+        <nav className="flex items-center justify-between p-3 md:p-4 lg:p-6 max-w-7xl mx-auto">
+          <div className="flex-1">
+            <a href="/" className="block">
+              <img
+                alt="ChatApp"
+                src="./logo.png"
+                className="h-10 w-auto sm:h-12 md:h-16 lg:h-20 transition-all duration-200"
+              />
             </a>
           </div>
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-lg transition-colors ${
+              isDarkMode
+                ? "hover:bg-gray-800 text-gray-300"
+                : "hover:bg-gray-100 text-gray-600"
+            }`}
+          >
+            {isDarkMode ? (
+              <SunIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+            ) : (
+              <MoonIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+            )}
+          </button>
         </nav>
         <Dialog
           open={mobileMenuOpen}
@@ -56,57 +81,109 @@ export default function Example() {
         </Dialog>
       </header>
 
-      <div className="relative isolate px-6 pt-14 lg:px-8">
+      {/* Main Content with Animations */}
+      <div className="relative isolate">
+        {/* Top Gradient Animation */}
         <div
+          className="absolute inset-x-0 -z-10 transform-gpu overflow-hidden blur-3xl"
           aria-hidden="true"
-          className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
         >
           <div
+            className="relative aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
             style={{
               clipPath:
                 "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
             }}
-            className="relative left-[calc(50%-11rem)] aspect-1155/678 w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-linear-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
           />
         </div>
-        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
-          <div className="hidden sm:mb-8 sm:flex sm:justify-center">
-            <div className="relative rounded-full px-3 py-1 text-sm/6 text-gray-600 ring-1 ring-gray-900/10 hover:ring-gray-900/20">
-              Developed by students for students.{" "}
-              <a href="/" className="font-semibold text-indigo-600">
-                <span aria-hidden="true" className="absolute inset-0" />
-                Read more <span aria-hidden="true">&rarr;</span>
-              </a>
-            </div>
-          </div>
-          <div className="text-center">
-            <h1 className="text-5xl font-semibold tracking-tight text-balance text-gray-900 sm:text-7xl">
+
+        {/* Content */}
+        <div className="flex min-h-screen items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center relative z-10">
+            <h1
+              className={`text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl mb-6 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              } animate-fade-in`}
+            >
               Welcome to ChatApp
             </h1>
-
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <a
-                href="/login"
-                className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Get started
-              </a>
-            </div>
+            <p
+              className={`text-base sm:text-lg md:text-xl max-w-prose mx-auto mb-8 ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+              } animate-fade-in-up`}
+            >
+              Developed by students for students
+            </p>
+            <a
+              href="/login"
+              className="inline-block rounded-lg bg-indigo-600 px-4 py-2.5 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 hover:scale-105 animate-fade-in-up"
+            >
+              Get started
+            </a>
           </div>
         </div>
+
+        {/* Bottom Gradient Animation */}
         <div
-          aria-hidden="true"
           className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]"
+          aria-hidden="true"
         >
           <div
+            className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem] animate-gradient-y"
             style={{
               clipPath:
                 "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
             }}
-            className="relative left-[calc(50%+3rem)] aspect-1155/678 w-[36.125rem] -translate-x-1/2 bg-linear-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"
           />
         </div>
       </div>
+
+      {/* Add these keyframe animations to your CSS/Tailwind config */}
+      <style jsx>{`
+        @keyframes gradient-y {
+          0% {
+            transform: translateY(0%) translateX(-50%);
+          }
+          50% {
+            transform: translateY(5%) translateX(-50%);
+          }
+          100% {
+            transform: translateY(0%) translateX(-50%);
+          }
+        }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-gradient-y {
+          animation: gradient-y 8s ease-in-out infinite;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 1s ease-out forwards;
+        }
+
+        .animate-fade-in-up {
+          animation: fade-in-up 1s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
