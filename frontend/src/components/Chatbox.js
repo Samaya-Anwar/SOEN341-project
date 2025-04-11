@@ -222,6 +222,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
             : "border-gray-200 bg-white"
         }
         flex items-center justify-between
+        group
       `}
       >
         <div className="flex items-center space-x-3">
@@ -269,7 +270,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
         <button
           className={`p-2 rounded-full hover:${
             isDarkMode ? "bg-gray-700" : "bg-gray-100"
-          }`}
+          } opacity-0 group-hover:opacity-100 transition-opacity duration-200`}
         >
           <EllipsisHorizontalIcon
             className={`h-6 w-6 ${
@@ -331,7 +332,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
               <div className="flex justify-between items-start gap-2">
                 <div
                   className={`
-                  text-xs sm:text-sm mb-1
+                  text-xs sm:text-sm mb-1 cursor-pointer
                   ${
                     msg.sender === username
                       ? "text-indigo-100"

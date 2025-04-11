@@ -23,7 +23,7 @@ export default function Hero() {
           <div className="flex-1">
             <a href="/" className="block">
               <img
-                alt="ChatApp"
+                alt="Orbit"
                 src="./logo.png"
                 className="h-10 w-auto sm:h-12 md:h-16 lg:h-20 transition-all duration-200"
               />
@@ -105,7 +105,7 @@ export default function Hero() {
                 isDarkMode ? "text-white" : "text-gray-900"
               } animate-fade-in`}
             >
-              Welcome to ChatApp
+              Welcome to Orbit
             </h1>
             <p
               className={`text-base sm:text-lg md:text-xl max-w-prose mx-auto mb-8 ${

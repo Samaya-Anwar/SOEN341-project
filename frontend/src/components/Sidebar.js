@@ -32,14 +32,13 @@ const Sidebar = ({
     const fetchChannels = async () => {
       try {
         const response = await getChannels();
+        console.log("Fetched channels:", response);
         setChannels(response);
       } catch (error) {
         console.error("Error fetching channels:", error);
       }
     };
-
     fetchChannels();
-
     socket.on("channelUpdated", fetchChannels);
 
     return () => socket.off("channelUpdated", fetchChannels);
@@ -159,6 +158,7 @@ const Sidebar = ({
 
   const onDeleteChannel = async (channel) => {
     try {
+      console.log("Deleting channel:", channel);
       await deleteChannel(channel);
       socket.emit("channelUpdated");
     } catch (error) {
@@ -185,57 +185,89 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-gray-600 bg-opacity-75 z-20"
+          className="md:hidden fixed inset-0 bg-gray-600/75 dark:bg-gray-900/75 backdrop-blur-sm z-20"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* Sidebar Container */}
       <div
         className={`
-          fixed md:static inset-y-0 left-0 z-30
+          fixed md:static inset-y-0 left-0
+          w-[280px] md:w-[320px]
+          ${isDarkMode ? "bg-gray-800" : "bg-white"}
+          ${isDarkMode ? "border-gray-700" : "border-gray-200"}
+          border-r
           transform ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0 transition-transform duration-300 ease-in-out
-          w-72 md:w-80 lg:w-96 bg-white border-r border-gray-200
-          flex flex-col h-full
+          md:translate-x-0
+          transition-all duration-300 ease-in-out
+          flex flex-col
+          z-30
         `}
       >
-        {/* Logo and Welcome Section - Hidden on Mobile (shown in header) */}
-        <div className="hidden md:block px-6 py-4 border-b border-gray-200">
-          <a href="/" className="block">
+        <div
+          className={`
+          px-6 py-4 border-b
+          ${isDarkMode ? "border-gray-700" : "border-gray-200"}
+        `}
+        >
+          <a href="/">
             <img alt="ChatApp" src="./logo.png" className="h-12 w-auto" />
           </a>
-          <h2 className="mt-4 text-xl font-bold tracking-tight text-gray-900">
+          <h2
+            className={`
+            mt-4 text-xl font-bold
+            ${isDarkMode ? "text-gray-100" : "text-gray-900"}
+          `}
+          >
             Welcome, {username || "Anonymous"}
           </h2>
         </div>
 
-        {/* Search Bar */}
-        <div className="px-4 sm:px-6 mt-2 mb-4">
+        <div className="px-4 py-3">
           <input
             type="text"
             placeholder="Search channels and chats..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full rounded-lg border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+            className={`
+              w-full px-3 py-2 rounded-lg border
+              ${
+                isDarkMode
+                  ? "bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400"
+                  : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
+              }
+              focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+              transition-colors
+            `}
           />
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div
+          className={`
+          flex border-b
+          ${isDarkMode ? "border-gray-700" : "border-gray-200"}
+        `}
+        >
           <button
             onClick={() => {
               setActiveTab("channels");
               onSelectChatType("channel");
             }}
-            className={`flex-1 py-2 px-4 text-sm font-medium transition-all ${
-              activeTab === "channels"
-                ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`
+              flex-1 py-2 px-4 text-sm font-medium
+              ${
+                activeTab === "channels"
+                  ? isDarkMode
+                    ? "text-white border-b-2 border-indigo-400 bg-gray-700"
+                    : "text-indigo-600 border-b-2 border-indigo-600 bg-gray-50"
+                  : isDarkMode
+                  ? "text-gray-400 hover:text-gray-200"
+                  : "text-gray-500 hover:text-gray-700"
+              }
+              transition-colors
+            `}
           >
             Channels
           </button>
@@ -244,26 +276,53 @@ const Sidebar = ({
               setActiveTab("privateChats");
               onSelectChatType("privateChat");
             }}
-            className={`flex-1 py-2 px-4 text-sm font-medium transition-all ${
-              activeTab === "privateChats"
-                ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`
+              flex-1 py-2 px-4 text-sm font-medium
+              ${
+                activeTab === "privateChats"
+                  ? isDarkMode
+                    ? "text-white border-b-2 border-indigo-400 bg-gray-700"
+                    : "text-indigo-600 border-b-2 border-indigo-600 bg-gray-50"
+                  : isDarkMode
+                  ? "text-gray-400 hover:text-gray-200"
+                  : "text-gray-500 hover:text-gray-700"
+              }
+              transition-colors
+            `}
           >
             Private Chats
           </button>
         </div>
 
-        {/* Chat Lists */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+        <div
+          className={`
+          flex-1 overflow-y-auto px-4 py-4
+          ${isDarkMode ? "bg-gray-800" : "bg-white"}
+        `}
+        >
           {activeTab === "channels" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Channels</h3>
+                <h3
+                  className={`
+                  text-lg font-medium
+                  ${isDarkMode ? "text-gray-100" : "text-gray-900"}
+                `}
+                >
+                  Channels
+                </h3>
                 {role === "admin" && (
                   <button
                     onClick={onCreateChannel}
-                    className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                    className={`
+                      text-sm font-medium
+                      ${
+                        isDarkMode
+                          ? "text-indigo-400 hover:text-indigo-300"
+                          : "text-indigo-600 hover:text-indigo-500"
+                      }
+                      transition-colors
+                    `}
                   >
                     + Add Channel
                   </button>
@@ -275,28 +334,37 @@ const Sidebar = ({
                   No channels available
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <div className="space-y-1">
                   {filteredChannels.map((channel) => (
-                    <li
+                    <div
                       key={channel.name}
-                      className="flex justify-between items-center rounded-md hover:bg-gray-50 px-3 py-2 cursor-pointer"
                       onClick={() => handleSelectChannel(channel.name)}
+                      className={`
+                        w-full flex items-center justify-between px-3 py-2 rounded-lg
+                        cursor-pointer
+                        ${
+                          isDarkMode
+                            ? "hover:bg-gray-700 text-gray-100"
+                            : "hover:bg-gray-50 text-gray-900"
+                        }
+                        transition-colors
+                      `}
                     >
-                      <span className="text-gray-900">{channel.name}</span>
+                      <span>{channel.name}</span>
                       {role === "admin" && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onDeleteChannel(channel.name);
                           }}
-                          className="text-sm text-red-600 hover:text-red-500"
+                          className="ml-2 text-xs text-red-500 hover:text-red-700"
                         >
                           Delete
                         </button>
                       )}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           )}
@@ -304,7 +372,12 @@ const Sidebar = ({
           {activeTab === "privateChats" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3
+                  className={`
+                  text-lg font-medium
+                  ${isDarkMode ? "text-gray-100" : "text-gray-900"}
+                `}
+                >
                   Private Chats
                 </h3>
                 <button
@@ -321,7 +394,14 @@ const Sidebar = ({
                       alert("No username entered.");
                     }
                   }}
-                  className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                  className={`
+                    text-indigo-600 hover:text-indigo-500
+                    ${
+                      isDarkMode
+                        ? "text-gray-400 hover:text-gray-300"
+                        : "text-gray-500 hover:text-gray-700"
+                    }
+                  `}
                 >
                   + New Chat
                 </button>
@@ -332,17 +412,36 @@ const Sidebar = ({
                   No private chats found
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <div className="space-y-1">
                   {filteredPrivateChats.map((chat) => (
-                    <li
+                    <div
                       key={chat.partnerId}
-                      className="flex justify-between items-center rounded-md hover:bg-gray-50 px-3 py-2 cursor-pointer"
                       onClick={() => handleSelectPrivateChat(chat)}
+                      className={`
+                        w-full flex items-center justify-between px-3 py-2 rounded-lg
+                        cursor-pointer
+                        ${
+                          isDarkMode
+                            ? "hover:bg-gray-700 text-gray-100"
+                            : "hover:bg-gray-50 text-gray-900"
+                        }
+                        transition-colors
+                      `}
                     >
                       <div>
-                        <div className="text-gray-900">{chat.username}</div>
+                        <div
+                          className={`font-medium ${
+                            isDarkMode ? "text-gray-100" : "text-gray-900"
+                          }`}
+                        >
+                          {chat.username}
+                        </div>
                         {chat.messages && chat.messages.length > 0 && (
-                          <div className="text-sm text-gray-500 truncate">
+                          <div
+                            className={`text-sm ${
+                              isDarkMode ? "text-gray-400" : "text-gray-500"
+                            } truncate`}
+                          >
                             {chat.messages[chat.messages.length - 1].content}
                           </div>
                         )}
@@ -352,51 +451,90 @@ const Sidebar = ({
                           e.stopPropagation();
                           onDeletePrivateChat(chat.chatId);
                         }}
-                        className="text-sm text-red-600 hover:text-red-500"
+                        className={`
+                          text-sm text-red-600 hover:text-red-500
+                          ${
+                            isDarkMode
+                              ? "text-gray-400 hover:text-gray-300"
+                              : "text-gray-500 hover:text-gray-700"
+                          }
+                        `}
                       >
                         Delete
                       </button>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           )}
         </div>
 
         {/* User Profile Section */}
-        <div className="mt-auto border-t border-gray-200 px-4 sm:px-6 py-4 bg-gray-50">
-          <div className="flex items-center mb-3">
-            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white mr-2">
-              {username ? username.charAt(0).toUpperCase() : "A"}
+        <div
+          className={`
+          mt-auto border-t p-4
+          ${
+            isDarkMode
+              ? "border-gray-700 bg-gray-800"
+              : "border-gray-200 bg-gray-50"
+          }
+        `}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white">
+                {username ? username.charAt(0).toUpperCase() : "A"}
+              </div>
+              <div>
+                <div
+                  className={`font-medium ${
+                    isDarkMode ? "text-gray-100" : "text-gray-900"
+                  }`}
+                >
+                  {username || "Anonymous"}
+                </div>
+                <div
+                  className={`text-sm ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  {role || "Member"}
+                </div>
+              </div>
             </div>
-            <div className="text-gray-900 font-medium">
-              {username || "Anonymous"}
-            </div>
+            <button
+              onClick={toggleTheme}
+              className={`
+                p-2 rounded-lg
+                ${
+                  isDarkMode
+                    ? "hover:bg-gray-700 text-gray-300"
+                    : "hover:bg-gray-100 text-gray-600"
+                }
+                transition-colors
+              `}
+            >
+              {isDarkMode ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
+            </button>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
-          >
-            Logout
-          </button>
-          <button
-            onClick={toggleTheme}
             className={`
-              p-2 rounded-lg
+              mt-4 w-full rounded-lg px-3 py-2 text-sm font-semibold text-white
               ${
                 isDarkMode
-                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-indigo-500 hover:bg-indigo-400"
+                  : "bg-indigo-600 hover:bg-indigo-500"
               }
-              transition-colors duration-200
+              transition-colors
             `}
           >
-            {isDarkMode ? (
-              <SunIcon className="h-5 w-5" />
-            ) : (
-              <MoonIcon className="h-5 w-5" />
-            )}
+            Logout
           </button>
         </div>
       </div>
