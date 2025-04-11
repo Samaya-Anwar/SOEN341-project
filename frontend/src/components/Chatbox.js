@@ -403,6 +403,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
             <span>Someone is typing...</span>
           </div>
         )}
+
       </div>
 
       {/* Scroll to Bottom Button */}
@@ -600,6 +601,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
         )}
       </div>
     </div>
+
   );
 };
 
