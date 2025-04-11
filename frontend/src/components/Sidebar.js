@@ -9,6 +9,7 @@ import { deletePrivateChat } from "../api/delete/deletePrivateChat";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const socket = io(`${API_URL}`);
@@ -27,6 +28,15 @@ const Sidebar = ({
   const username = localStorage.getItem("username");
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
+  const [alert, setAlert] = useState({ message: "", type: "", show: false });
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [promptData, setPromptData] = useState({
+    show: false,
+    type: "",
+    message: "",
+    action: null,
+  });
+  const [isPromptVisible, setIsPromptVisible] = useState(false);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -97,18 +107,35 @@ const Sidebar = ({
       };
     });
   }, [privateChats, username]);
-
   const filteredChannels = channels.filter((channel) =>
     (channel.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   const filteredPrivateChats = useMemo(() => {
     return combinedChats.filter((chat) =>
       chat.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [combinedChats, searchQuery]);
 
-  const onCreatePrivateChat = async (partnerUsername) => {
+  const onCreateChannel = () => {
+    showPrompt("input", "Enter new channel name:", (channelName) => {
+      if (channelName) {
+        handleCreateChannel(channelName);
+      }
+    });
+  };
+  const onCreatePrivateChat = async () => {
+    showPrompt(
+      "input",
+      "Enter username to start chat with:",
+      (partnerUsername) => {
+        if (partnerUsername !== null && partnerUsername.trim() !== "") {
+          handleCreatePrivateChat(partnerUsername.trim());
+        }
+      }
+    );
+  };
+
+  const handleCreatePrivateChat = async (partnerUsername) => {
     const exists = combinedChats.find(
       (chat) => chat.username.toLowerCase() === partnerUsername.toLowerCase()
     );
@@ -121,9 +148,7 @@ const Sidebar = ({
       const response = await createPrivateChat({
         participants: [username, partnerUsername],
       });
-
       console.log("New private chat created:", response.data);
-
       socket.emit("privateChatUpdated");
       if (response?.data?._id) {
         onSelectChat({ username: partnerUsername, chatId: response.data._id });
@@ -135,34 +160,81 @@ const Sidebar = ({
       console.error("Error starting new private chat:", error);
     }
   };
+  const handleCreateChannel = async (channelName) => {
+    try {
+      await createChannel(channelName);
+      socket.emit("channelUpdated");
+      setAlert({
+        message: "Channel created successfully",
+        type: "success",
+        show: true,
+      });
+      setIsAlertVisible(true);
+      setTimeout(() => {
+        setIsAlertVisible(false);
+        setAlert({ message: "", type: "", show: false });
+      }, 5000);
+    } catch (error) {
+      setAlert({
+        message: error.response?.data?.message || "Error creating channel",
+        type: "error",
+        show: true,
+      });
+      setIsAlertVisible(true);
+      setTimeout(() => {
+        setIsAlertVisible(false);
+        setAlert({ message: "", type: "", show: false });
+      }, 5000);
+    }
+  };
   const onDeletePrivateChat = async (chatId) => {
     try {
       await deletePrivateChat(chatId);
       socket.emit("privateChatUpdated");
+      setIsAlertVisible(true);
+      setTimeout(() => {
+        setIsAlertVisible(false);
+        setAlert({ message: "", type: "", show: false });
+      }, 5000);
     } catch (error) {
-      console.error("Error deleting private chat:", error);
+      setAlert({
+        message: error.response?.data?.message || "Error deleting channel",
+        type: "error",
+        show: true,
+      });
+      setIsAlertVisible(true);
+      setTimeout(() => {
+        setIsAlertVisible(false);
+        setAlert({ message: "", type: "", show: false });
+      }, 5000);
     }
   };
-
-  const onCreateChannel = async () => {
-    const channelName = prompt("Enter new channel name:");
-    if (!channelName) return;
-
-    try {
-      await createChannel(channelName);
-      socket.emit("channelUpdated");
-    } catch (error) {
-      console.error("Error creating channel:", error);
-    }
-  };
-
   const onDeleteChannel = async (channel) => {
     try {
       console.log("Deleting channel:", channel);
       await deleteChannel(channel);
       socket.emit("channelUpdated");
+      setAlert({
+        message: "Channel deleted successfully",
+        type: "success",
+        show: true,
+      });
+      setIsAlertVisible(true);
+      setTimeout(() => {
+        setIsAlertVisible(false);
+        setAlert({ message: "", type: "", show: false });
+      }, 5000);
     } catch (error) {
-      console.error("Error deleting channel:", error);
+      setAlert({
+        message: error.response?.data?.message || "Error deleting channel",
+        type: "error",
+        show: true,
+      });
+      setIsAlertVisible(true);
+      setTimeout(() => {
+        setIsAlertVisible(false);
+        setAlert({ message: "", type: "", show: false });
+      }, 5000);
     }
   };
   const handleLogout = () => {
@@ -171,6 +243,23 @@ const Sidebar = ({
     localStorage.removeItem("role");
 
     navigate("/login");
+  };
+  const showPrompt = (type, message, action) => {
+    setPromptData({ show: true, type, message, action });
+    setIsPromptVisible(true);
+  };
+
+  const handlePromptAction = (value) => {
+    if (promptData.action && value) {
+      promptData.action(value);
+    }
+    setIsPromptVisible(false);
+    setPromptData({ show: false, type: "", message: "", action: null });
+  };
+
+  const handlePromptClose = () => {
+    setIsPromptVisible(false);
+    setPromptData({ show: false, type: "", message: "", action: null });
   };
 
   const handleSelectChannel = (channelName) => {
@@ -382,26 +471,15 @@ const Sidebar = ({
                   Private Chats
                 </h3>
                 <button
-                  onClick={() => {
-                    const usernameToChat = prompt(
-                      "Enter username to start chat with:"
-                    );
-                    if (
-                      usernameToChat !== null &&
-                      usernameToChat.trim() !== ""
-                    ) {
-                      onCreatePrivateChat(usernameToChat.trim());
-                    } else {
-                      alert("No username entered.");
-                    }
-                  }}
+                  onClick={onCreatePrivateChat}
                   className={`
-                    text-indigo-600 hover:text-indigo-500
+                    text-sm font-medium
                     ${
                       isDarkMode
-                        ? "text-gray-400 hover:text-gray-300"
-                        : "text-gray-500 hover:text-gray-700"
+                        ? "text-indigo-400 hover:text-indigo-300"
+                        : "text-indigo-600 hover:text-indigo-500"
                     }
+                    transition-colors
                   `}
                 >
                   + New Chat
@@ -471,7 +549,6 @@ const Sidebar = ({
           )}
         </div>
 
-        {/* User Profile Section */}
         <div
           className={`
           mt-auto border-t p-4
@@ -542,6 +619,90 @@ const Sidebar = ({
           </button>
         </div>
       </div>
+
+      {alert.show && isAlertVisible && (
+        <div
+          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center justify-between min-w-[300px] max-w-md ${
+            alert.type === "success"
+              ? isDarkMode
+                ? "bg-green-900 text-green-200"
+                : "bg-green-100 text-green-800"
+              : isDarkMode
+              ? "bg-red-900 text-red-200"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          <div className="flex items-center">
+            {alert.type === "success" ? (
+              <CheckIcon className="h-5 w-5 mr-2" />
+            ) : (
+              <XMarkIcon className="h-5 w-5 mr-2" />
+            )}
+            <span>{alert.message}</span>
+          </div>
+          <button
+            onClick={() => {
+              setIsAlertVisible(false);
+              setAlert({ message: "", type: "", show: false });
+            }}
+            className={`ml-4 p-1 rounded-full hover:bg-opacity-20 hover:bg-black ${
+              isDarkMode ? "text-green-200" : "text-green-800"
+            }`}
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {promptData.show && isPromptVisible && (
+        <div
+          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex flex-col min-w-[300px] max-w-md ${
+            isDarkMode ? "bg-gray-800 text-gray-200" : "bg-white text-gray-800"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-medium">{promptData.message}</span>
+            <button
+              onClick={handlePromptClose}
+              className={`p-1 rounded-full hover:bg-opacity-20 hover:bg-black ${
+                isDarkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          </div>
+          {promptData.type === "input" && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className={`flex-1 px-3 py-2 rounded-lg border ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handlePromptAction(e.target.value);
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                onClick={() =>
+                  handlePromptAction(document.querySelector("input").value)
+                }
+                className={`px-4 py-2 rounded-lg font-medium ${
+                  isDarkMode
+                    ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                    : "bg-indigo-600 text-white hover:bg-indigo-500"
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 };
