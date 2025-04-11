@@ -172,6 +172,7 @@ const Sidebar = ({
 
     navigate("/login");
   };
+
   const handleSelectChannel = (channelName) => {
     onSelectChat(channelName);
     onSelectChatType("channel");
@@ -494,13 +495,16 @@ const Sidebar = ({
                 >
                   {username || "Anonymous"}
                 </div>
-                <div
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  {role || "Member"}
-                </div>
+                {role === "admin" && (
+                  <button
+                    onClick={() => navigate("/admin")}
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    {role || "Member"}
+                  </button>
+                )}
               </div>
             </div>
             <button
