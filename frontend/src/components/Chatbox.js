@@ -36,6 +36,10 @@ const Chatbox = ({ selectedChat, chatType }) => {
     setMessages([]);
     setInput("");
     setSummary("");
+    setTyping(false);
+    setShowEmojiList(false);
+    setShowScrollButton(false);
+    setIsAtBottom(true);
   }, [selectedChat, chatType]);
 
   const privateChatId = useMemo(() => {
@@ -168,11 +172,18 @@ const Chatbox = ({ selectedChat, chatType }) => {
   };
 
   const getChatTitle = () => {
-    if (!selectedChat) return "Select a chat";
-    if (selectedChat.username) {
+    if (
+      !selectedChat ||
+      (chatType === "channel" && selectedChat.username) ||
+      (chatType === "privateChat" && !selectedChat?.username)
+    )
+      return "Select a chat";
+    if (chatType === "privateChat" && selectedChat.username) {
       return `${selectedChat.username}`;
+    } else if (chatType === "channel" && selectedChat) {
+      return `#${selectedChat}`;
     }
-    return `#${selectedChat}`;
+    return "Select a chat";
   };
 
   const handleScroll = (e) => {
@@ -211,7 +222,6 @@ const Chatbox = ({ selectedChat, chatType }) => {
       transition-colors duration-200
     `}
     >
-      {/* Header */}
       <div
         className={`
         sticky top-0 z-20
@@ -449,11 +459,17 @@ const Chatbox = ({ selectedChat, chatType }) => {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder={`Message ${
-                chatType === "privateChat" && selectedChat?.username
-                  ? selectedChat.username
-                  : "#" + selectedChat
-              }...`}
+              placeholder={
+                !selectedChat ||
+                (chatType === "channel" && selectedChat.username) ||
+                (chatType === "privateChat" && !selectedChat?.username)
+                  ? ""
+                  : `Message ${
+                      chatType === "privateChat" && selectedChat?.username
+                        ? selectedChat.username
+                        : "#" + selectedChat
+                    }...`
+              }
               className={`
                 w-full rounded-lg px-4 py-3 pr-12
                 ${
@@ -521,7 +537,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
           </button>
         </div>
 
-        {!summary && messages.length > 0 && (
+        {!summary && messages.length > 0 && chatType !== "privateChat" && (
           <div className="px-4 pt-3">
             <button
               onClick={onSummarize}
