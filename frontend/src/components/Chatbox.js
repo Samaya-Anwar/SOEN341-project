@@ -537,7 +537,7 @@ const Chatbox = ({ selectedChat, chatType }) => {
           </button>
         </div>
 
-        {!summary && messages.length > 0 && chatType !== "privateChat" && (
+        {chatType !== "privateChat" && (
           <div className="px-4 pt-3">
             <button
               onClick={onSummarize}
