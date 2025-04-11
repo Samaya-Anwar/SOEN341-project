@@ -303,7 +303,7 @@ const Sidebar = ({
         `}
         >
           <a href="/">
-            <img alt="ChatApp" src="./logo.png" className="h-12 w-auto" />
+            <img alt="orbit" src="./logo2.png" className="h-16 w-auto" />
           </a>
           <h2
             className={`

@@ -213,9 +213,9 @@ const LoginSignup = () => {
         <div className="text-center">
           <a href="/">
             <img
-              alt="ChatApp"
-              src="./logo.png"
-              className="mx-auto h-12 w-auto sm:h-14 md:h-16 transition-all duration-200"
+              alt="orbit"
+              src="./logo2.png"
+              className="mx-auto h-18 w-auto sm:h-20 md:h-24 transition-all duration-200"
             />
           </a>
           <h2

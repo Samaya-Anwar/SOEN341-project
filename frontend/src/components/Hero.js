@@ -25,7 +25,7 @@ export default function Hero() {
               <img
                 alt="Orbit"
                 src="./logo.png"
-                className="h-10 w-auto sm:h-12 md:h-16 lg:h-20 transition-all duration-200"
+                className="h-16 w-auto ml-1 mt-5 sm:h-16 md:h-18 lg:h-25 transition-all duration-200 "
               />
             </a>
           </div>
@@ -38,7 +38,7 @@ export default function Hero() {
             }`}
           >
             {isDarkMode ? (
-              <SunIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              <SunIcon className="h-5 w-5 sm:h-6 sm:w-6 " />
             ) : (
               <MoonIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             )}
